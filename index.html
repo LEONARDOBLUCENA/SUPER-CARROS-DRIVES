@@ -580,22 +580,29 @@ function parseXLSX(file, cb) {
 
 function extractRecords(rows) {
   // Each section: [col_offset, car_name, data_start_row, data_end_row]
-  // col offsets within section: +1=client, +3=vendedor, +5=C/D, +10=instrutor, +14=status
+  // col offsets within section: +0=time, +1=client, +3=vendedor, +5=C/D, +10=instrutor, +14=status
+  // Cols 150 and 165 are reused across multiple sub-sections with different row ranges
   const sections = [
-    // Section 1 — header row 0, data rows 1-31
-    [0,   'MUSTANG BLACK',         1, 32],
-    [15,  'MUSTANG WHITE',         1, 32],
-    [30,  'MUSTANG RED',           1, 32],
-    [45,  '718',                   1, 32],
-    [60,  'PORSCHE 911 CARRERA',   1, 32],
-    [75,  'MASERATI GRANCABRIO',   1, 32],
-    [90,  'CAMARO BORDO',          1, 32],
-    [105, 'MUSTANG 2025',          1, 32],
-    [120, 'FERRARI CALIFORNIA',    1, 32],
-    [135, 'SHELBY GT-500',         1, 32],
-    [150, 'CORVETTE C6',           1, 32],
-    [165, 'BMW M3',                1, 32],
-    // Sub-section — header row 32, data rows 33-42
+    // Section 1 — header row 0, data rows 1-42
+    [0,   'MUSTANG BLACK',         1, 43],
+    [15,  'MUSTANG WHITE',         1, 43],
+    [30,  'MUSTANG RED',           1, 43],
+    [45,  '718',                   1, 43],
+    [60,  'PORSCHE 911 CARRERA',   1, 33],  // replaced by Carrera S at row 33
+    [75,  'MASERATI GRANCABRIO',   1, 33],  // replaced by Dodge Challenger at row 33
+    [90,  'CAMARO BORDO',          1, 33],  // replaced by Mustang 5.0 at row 33
+    [105, 'MUSTANG 2025',          1, 33],  // replaced by Porsche Boxster at row 33
+    [120, 'FERRARI CALIFORNIA',    1, 33],  // replaced by Mustang GT at row 33
+    [135, 'SHELBY GT-500',         1, 43],
+    // Col 150 split: Corvette C6 rows 1-22, Camaro Amarelo rows 23-42
+    [150, 'CORVETTE C6',           1, 23],
+    [150, 'CAMARO AMARELO',        23, 43],
+    // Col 165 split: BMW M3 → Ferrari 360 Modena → Toyota Supra → Audi RS6
+    [165, 'BMW M3',                1, 12],
+    [165, 'FERRARI 360 MODENA',    12, 23],
+    [165, 'TOYOTA SUPRA',          23, 33],
+    [165, 'AUDI RS6',              34, 43],
+    // Sub-section B — header row 32, cols 60-120, data rows 33-42
     [60,  'PORSCHE 911 CARRERA S', 33, 43],
     [75,  'DODGE CHALLENGER',      33, 43],
     [90,  'MUSTANG 5.0',           33, 43],
