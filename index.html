@@ -132,6 +132,22 @@ input[type="file"] { display:none; }
 .btn-red:disabled { background:var(--s3); color:var(--text3); cursor:not-allowed; border:1px solid var(--border); box-shadow:none; transform:none; }
 .btn-ghost { background:transparent; border:1px solid var(--border2); color:var(--text2); font-family:var(--sans); font-size:12px; padding:7px 14px; width:auto; }
 .btn-ghost:hover { border-color:var(--text2); color:var(--text); }
+.btn-export {
+  background: transparent;
+  border: 1px solid var(--green);
+  color: var(--green);
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 7px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all .15s;
+  white-space: nowrap;
+  width: auto;
+  letter-spacing: .5px;
+}
+.btn-export:hover { background: rgba(0,214,143,.1); }
 
 .import-log {
   background:var(--s3); border:1px solid var(--border); border-radius:10px;
@@ -173,7 +189,7 @@ input[type="file"] { display:none; }
 .chip:hover { border-color:var(--border2); color:var(--text); }
 .chip.active { background:var(--red); border-color:var(--red); color:white; }
 
-.kpi-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:14px; margin-bottom:22px; }
+.kpi-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:22px; }
 .kpi {
   background:var(--s2); border:1px solid var(--border); border-radius:12px;
   padding:18px 20px; position:relative; overflow:hidden;
@@ -359,6 +375,8 @@ function saveDB(d) { localStorage.setItem(KEY, JSON.stringify(d)); }
 
 let DB = loadDB();
 let activeDay = 'all';
+let activeCar = 'all';
+let activeInst = 'all';
 let pendingFile = null;
 let charts = {};
 
@@ -506,8 +524,16 @@ function clearAllData() {
 }
 
 // ══ DASHBOARD ══
+function getBaseRecords() {
+  // records filtered by day only (used to build car/inst options)
+  const base = activeDay==='all' ? Object.values(DB).flat() : (DB[activeDay]||[]);
+  return base;
+}
 function getRecords() {
-  return activeDay==='all' ? Object.values(DB).flat() : (DB[activeDay]||[]);
+  let recs = getBaseRecords();
+  if (activeCar  !== 'all') recs = recs.filter(r => r.carro    === activeCar);
+  if (activeInst !== 'all') recs = recs.filter(r => r.instrutor === activeInst);
+  return recs;
 }
 
 function renderDashboard() {
@@ -520,17 +546,21 @@ function renderDashboard() {
     return;
   }
 
+  // base (for building filter options)
+  const base = getBaseRecords();
+  const allCars  = ['all', ...new Set(base.map(r=>r.carro).filter(Boolean))].sort();
+  const allInsts = ['all', ...new Set(base.map(r=>r.instrutor).filter(Boolean))].sort();
+
+  // filtered
   const records = getRecords();
   const carMap={}, instMap={}, vendMap={};
-  let drives=0, caronas=0, ok=0, agenda=0;
+  let drives=0, caronas=0;
 
   records.forEach(r => {
     if (!carMap[r.carro]) carMap[r.carro]={total:0,drive:0,carona:0};
     carMap[r.carro].total++;
-    if (r.tipo==='Drive')   { carMap[r.carro].drive++;  drives++; }
-    if (r.tipo==='Carona')  { carMap[r.carro].carona++; caronas++; }
-    if (r.status==='OK')    ok++;
-    if (r.status==='AGENDA') agenda++;
+    if (r.tipo==='Drive')  { carMap[r.carro].drive++;  drives++; }
+    if (r.tipo==='Carona') { carMap[r.carro].carona++; caronas++; }
 
     const inst=r.instrutor||'(sem instrutor)';
     if (!instMap[inst]) instMap[inst]={total:0,drive:0,carona:0};
@@ -547,25 +577,52 @@ function renderDashboard() {
   const sVend = Object.entries(vendMap).sort((a,b)=>b[1]-a[1]);
   const n = records.length;
 
-  const chips = [
-    `<span class="filter-label">Dia:</span>`,
-    `<div class="chip ${activeDay==='all'?'active':''}" onclick="setDay('all')">Todos</div>`,
-    ...days.map(d=>`<div class="chip ${activeDay===d?'active':''}" onclick="setDay('${d}')">${d}</div>`)
-  ].join('');
+  // chips builders
+  function dayChips() {
+    return [
+      `<span class="filter-label">Dia:</span>`,
+      `<div class="chip ${activeDay==='all'?'active':''}" onclick="setDay('all')">Todos</div>`,
+      ...days.map(d=>`<div class="chip ${activeDay===d?'active':''}" onclick="setDay('${d}')">${d}</div>`)
+    ].join('');
+  }
+  function carChips() {
+    return [
+      `<span class="filter-label">Carro:</span>`,
+      `<div class="chip ${activeCar==='all'?'active':''}" onclick="setCar('all')">Todos</div>`,
+      ...allCars.filter(c=>c!=='all').map(c=>`<div class="chip ${activeCar===c?'active':''}" onclick="setCar('${c.replace(/'/g,"\\'")}">${c}</div>`)
+    ].join('');
+  }
+  function instChips() {
+    return [
+      `<span class="filter-label">Instrutor:</span>`,
+      `<div class="chip ${activeInst==='all'?'active':''}" onclick="setInst('all')">Todos</div>`,
+      ...allInsts.filter(i=>i!=='all').map(i=>`<div class="chip ${activeInst===i?'active':''}" onclick="setInst('${i.replace(/'/g,"\\'")}">${i}</div>`)
+    ].join('');
+  }
 
-  const trows = activeDay==='all'
-    ? Object.entries(DB).flatMap(([day,recs])=>recs.map(r=>({...r,day})))
-    : records.map(r=>({...r,day:activeDay}));
+  const trows = (() => {
+    const sd = activeDay==='all';
+    if (sd) {
+      let all = Object.entries(DB).flatMap(([day,recs])=>recs.map(r=>({...r,day})));
+      if (activeCar  !== 'all') all = all.filter(r=>r.carro    === activeCar);
+      if (activeInst !== 'all') all = all.filter(r=>r.instrutor === activeInst);
+      return all;
+    }
+    return records.map(r=>({...r,day:activeDay}));
+  })();
   window._trows = trows;
+  window._trowsFiltered = trows;
 
   content.innerHTML = `
-    <div class="dash-topbar"><div class="filter-day">${chips}</div></div>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:22px;">
+      <div class="filter-day">${dayChips()}</div>
+      <div class="filter-day">${carChips()}</div>
+      <div class="filter-day">${instChips()}</div>
+    </div>
     <div class="kpi-grid">
       ${kpi('Total',n,'passageiros','var(--red)')}
       ${kpi('Drives',drives,pct(drives,n)+'% do total','var(--orange)')}
       ${kpi('Caronas',caronas,pct(caronas,n)+'% do total','var(--purple)')}
-      ${kpi('OK',ok,pct(ok,n)+'% concluídos','var(--green)')}
-      ${kpi('Agendados',agenda,'aguardando','var(--yellow)')}
     </div>
     <div class="charts-row">
       <div class="chart-card"><div class="chart-card-title">🏎 <span>DRIVES POR CARRO</span></div><canvas id="ch-carros"></canvas></div>
@@ -577,8 +634,11 @@ function renderDashboard() {
     </div>
     <div class="table-wrap-card">
       <div class="table-toolbar">
-        <div class="table-toolbar-title">📋 Listagem <span style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-left:8px">${n} registros</span></div>
-        <input class="table-search" placeholder="Buscar..." oninput="filterTbl(this.value)">
+        <div class="table-toolbar-title">📋 Listagem <span style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-left:8px" id="tbl-count">${trows.length} registros</span></div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input class="table-search" id="tbl-search" placeholder="Buscar..." oninput="filterTbl(this.value)">
+          <button class="btn btn-export" onclick="exportExcel()">⬇ Excel</button>
+        </div>
       </div>
       <div class="table-scroll">
         <table>
@@ -609,7 +669,9 @@ function kpi(label,val,meta,color) {
   return `<div class="kpi"><div class="kpi-bar" style="background:${color}"></div><div class="kpi-label">${label}</div><div class="kpi-val">${val}</div><div class="kpi-meta">${meta}</div></div>`;
 }
 function pct(a,b) { return b?Math.round(a/b*100):0; }
-function setDay(d) { activeDay=d; renderDashboard(); }
+function setDay(d)  { activeDay=d;  renderDashboard(); }
+function setCar(c)  { activeCar=c;  renderDashboard(); }
+function setInst(i) { activeInst=i; renderDashboard(); }
 
 // TABLE
 function renderRows(rows) {
@@ -627,9 +689,34 @@ function renderRows(rows) {
 }
 
 function filterTbl(q) {
-  renderRows((window._trows||[]).filter(r=>
-    [r.carro,r.cliente,r.vendedor,r.instrutor,r.status].some(v=>v&&String(v).toLowerCase().includes(q.toLowerCase()))
-  ));
+  const filtered = (window._trows||[]).filter(r=>
+    !q || [r.carro,r.cliente,r.vendedor,r.instrutor,r.status].some(v=>v&&String(v).toLowerCase().includes(q.toLowerCase()))
+  );
+  window._trowsFiltered = filtered;
+  const cnt = document.getElementById('tbl-count');
+  if (cnt) cnt.textContent = `${filtered.length} registros`;
+  renderRows(filtered);
+}
+
+function exportExcel() {
+  const rows = window._trowsFiltered || window._trows || [];
+  if (!rows.length) { showToast('Nenhum dado para exportar', true); return; }
+  const showDay = activeDay === 'all';
+  const headers = ['Carro','Cliente','Vendedor','Tipo','Instrutor','Status'];
+  if (showDay) headers.push('Dia');
+  const data = [headers, ...rows.map(r => {
+    const row = [r.carro, r.cliente, r.vendedor||'', r.tipo, r.instrutor||'', r.status||''];
+    if (showDay) row.push(r.day||'');
+    return row;
+  })];
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Drives');
+  const label = activeDay !== 'all' ? activeDay.replace(/\//g,'-') : 'todos';
+  const carLabel = activeCar !== 'all' ? '_'+activeCar.replace(/\s/g,'_') : '';
+  const instLabel = activeInst !== 'all' ? '_'+activeInst : '';
+  XLSX.writeFile(wb, `drives_${label}${carLabel}${instLabel}.xlsx`);
+  showToast(`✓ Exportado: ${rows.length} registros`);
 }
 
 let _sd={};
