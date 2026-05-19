@@ -178,16 +178,39 @@ input[type="file"] { display:none; }
 .empty-days { text-align:center; padding:32px; color:var(--text3); font-size:13px; }
 
 /* ─── DASHBOARD ─── */
-.dash-topbar { display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; flex-wrap:wrap; gap:12px; }
-.filter-day { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
-.filter-label { font-size:11px; font-family:var(--mono); color:var(--text3); text-transform:uppercase; letter-spacing:1px; margin-right:4px; }
-.chip {
-  padding:5px 14px; border-radius:20px; border:1px solid var(--border);
-  background:var(--s2); color:var(--text2); font-size:11px; font-family:var(--mono);
-  cursor:pointer; transition:all .15s; user-select:none;
+.filter-bar {
+  display: flex;
+  gap: 16px;
+  align-items: flex-end;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  padding: 16px 20px;
+  background: var(--s2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
 }
-.chip:hover { border-color:var(--border2); color:var(--text); }
-.chip.active { background:var(--red); border-color:var(--red); color:white; }
+.filter-group { display: flex; flex-direction: column; gap: 6px; min-width: 160px; flex: 1; }
+.filter-label { font-size: 10px; font-family: var(--mono); color: var(--text3); text-transform: uppercase; letter-spacing: 1px; }
+.filter-select {
+  background: var(--s3);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  color: var(--text);
+  padding: 9px 12px;
+  font-family: var(--mono);
+  font-size: 12px;
+  outline: none;
+  cursor: pointer;
+  transition: border-color .2s;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%235a6080' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 32px;
+}
+.filter-select:focus { border-color: var(--blue); }
+.filter-select option { background: var(--s3); color: var(--text); }
 
 .kpi-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:22px; }
 .kpi {
@@ -353,6 +376,23 @@ tbody td { padding:8px 16px; font-size:12px; white-space:nowrap; }
         <h1>Dashboard</h1>
         <p>Análise de drives, caronas, instrutores e vendedores.</p>
       </div>
+
+      <!-- FILTER BAR — stays in DOM, never rebuilt -->
+      <div class="filter-bar" id="filter-bar" style="display:none">
+        <div class="filter-group">
+          <label class="filter-label">Dia</label>
+          <select class="filter-select" id="sel-day" onchange="setDay(this.value)"></select>
+        </div>
+        <div class="filter-group">
+          <label class="filter-label">Carro</label>
+          <select class="filter-select" id="sel-car" onchange="setCar(this.value)"></select>
+        </div>
+        <div class="filter-group">
+          <label class="filter-label">Instrutor</label>
+          <select class="filter-select" id="sel-inst" onchange="setInst(this.value)"></select>
+        </div>
+      </div>
+
       <div id="dash-content">
         <div class="empty">
           <div class="empty-icon">🏎</div>
@@ -525,15 +565,35 @@ function clearAllData() {
 
 // ══ DASHBOARD ══
 function getBaseRecords() {
-  // records filtered by day only (used to build car/inst options)
-  const base = activeDay==='all' ? Object.values(DB).flat() : (DB[activeDay]||[]);
-  return base;
+  return activeDay === 'all' ? Object.values(DB).flat() : (DB[activeDay] || []);
 }
 function getRecords() {
   let recs = getBaseRecords();
-  if (activeCar  !== 'all') recs = recs.filter(r => r.carro    === activeCar);
+  if (activeCar  !== 'all') recs = recs.filter(r => r.carro     === activeCar);
   if (activeInst !== 'all') recs = recs.filter(r => r.instrutor === activeInst);
   return recs;
+}
+
+// Update the three <select> elements without rebuilding them
+function refreshSelects() {
+  const days  = sortedDays();
+  const base  = getBaseRecords();
+  const cars  = [...new Set(base.map(r => r.carro).filter(Boolean))].sort();
+  const insts = [...new Set(base.map(r => r.instrutor).filter(Boolean))].sort();
+
+  function populateSel(id, options, current) {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    sel.innerHTML = '<option value="all">Todos</option>' +
+      options.map(o => `<option value="${o}"${o===current?' selected':''}>${o}</option>`).join('');
+    sel.value = current;
+  }
+  populateSel('sel-day',  days,  activeDay);
+  populateSel('sel-car',  cars,  activeCar);
+  populateSel('sel-inst', insts, activeInst);
+
+  const fb = document.getElementById('filter-bar');
+  if (fb) fb.style.display = days.length ? 'flex' : 'none';
 }
 
 function renderDashboard() {
@@ -541,17 +601,13 @@ function renderDashboard() {
   const days = sortedDays();
   const content = document.getElementById('dash-content');
 
+  refreshSelects();
+
   if (!days.length) {
     content.innerHTML = `<div class="empty"><div class="empty-icon">🏎</div><h2>SEM DADOS</h2><p>Importe uma planilha na aba <strong>Importar</strong> para começar.</p></div>`;
     return;
   }
 
-  // base (for building filter options)
-  const base = getBaseRecords();
-  const allCars  = ['all', ...new Set(base.map(r=>r.carro).filter(Boolean))].sort();
-  const allInsts = ['all', ...new Set(base.map(r=>r.instrutor).filter(Boolean))].sort();
-
-  // filtered
   const records = getRecords();
   const carMap={}, instMap={}, vendMap={};
   let drives=0, caronas=0;
@@ -562,14 +618,14 @@ function renderDashboard() {
     if (r.tipo==='Drive')  { carMap[r.carro].drive++;  drives++; }
     if (r.tipo==='Carona') { carMap[r.carro].carona++; caronas++; }
 
-    const inst=r.instrutor||'(sem instrutor)';
+    const inst = r.instrutor || '(sem instrutor)';
     if (!instMap[inst]) instMap[inst]={total:0,drive:0,carona:0};
     instMap[inst].total++;
-    if (r.tipo==='Drive') instMap[inst].drive++;
+    if (r.tipo==='Drive')  instMap[inst].drive++;
     else if (r.tipo==='Carona') instMap[inst].carona++;
 
-    const vend=r.vendedor||'(sem vendedor)';
-    vendMap[vend]=(vendMap[vend]||0)+1;
+    const vend = r.vendedor || '(sem vendedor)';
+    vendMap[vend] = (vendMap[vend]||0) + 1;
   });
 
   const sCars = Object.entries(carMap).sort((a,b)=>b[1].total-a[1].total);
@@ -577,48 +633,20 @@ function renderDashboard() {
   const sVend = Object.entries(vendMap).sort((a,b)=>b[1]-a[1]);
   const n = records.length;
 
-  // chips builders
-  function dayChips() {
-    return [
-      `<span class="filter-label">Dia:</span>`,
-      `<div class="chip ${activeDay==='all'?'active':''}" onclick="setDay('all')">Todos</div>`,
-      ...days.map(d=>`<div class="chip ${activeDay===d?'active':''}" onclick="setDay('${d}')">${d}</div>`)
-    ].join('');
-  }
-  function carChips() {
-    return [
-      `<span class="filter-label">Carro:</span>`,
-      `<div class="chip ${activeCar==='all'?'active':''}" onclick="setCar('all')">Todos</div>`,
-      ...allCars.filter(c=>c!=='all').map(c=>`<div class="chip ${activeCar===c?'active':''}" onclick="setCar('${c.replace(/'/g,"\\'")}">${c}</div>`)
-    ].join('');
-  }
-  function instChips() {
-    return [
-      `<span class="filter-label">Instrutor:</span>`,
-      `<div class="chip ${activeInst==='all'?'active':''}" onclick="setInst('all')">Todos</div>`,
-      ...allInsts.filter(i=>i!=='all').map(i=>`<div class="chip ${activeInst===i?'active':''}" onclick="setInst('${i.replace(/'/g,"\\'")}">${i}</div>`)
-    ].join('');
-  }
-
+  // build table rows
   const trows = (() => {
-    const sd = activeDay==='all';
-    if (sd) {
-      let all = Object.entries(DB).flatMap(([day,recs])=>recs.map(r=>({...r,day})));
-      if (activeCar  !== 'all') all = all.filter(r=>r.carro    === activeCar);
-      if (activeInst !== 'all') all = all.filter(r=>r.instrutor === activeInst);
+    if (activeDay === 'all') {
+      let all = Object.entries(DB).flatMap(([day,recs]) => recs.map(r=>({...r,day})));
+      if (activeCar  !== 'all') all = all.filter(r => r.carro     === activeCar);
+      if (activeInst !== 'all') all = all.filter(r => r.instrutor === activeInst);
       return all;
     }
-    return records.map(r=>({...r,day:activeDay}));
+    return records.map(r => ({...r, day: activeDay}));
   })();
   window._trows = trows;
   window._trowsFiltered = trows;
 
   content.innerHTML = `
-    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:22px;">
-      <div class="filter-day">${dayChips()}</div>
-      <div class="filter-day">${carChips()}</div>
-      <div class="filter-day">${instChips()}</div>
-    </div>
     <div class="kpi-grid">
       ${kpi('Total',n,'passageiros','var(--red)')}
       ${kpi('Drives',drives,pct(drives,n)+'% do total','var(--orange)')}
@@ -668,10 +696,11 @@ function renderDashboard() {
 function kpi(label,val,meta,color) {
   return `<div class="kpi"><div class="kpi-bar" style="background:${color}"></div><div class="kpi-label">${label}</div><div class="kpi-val">${val}</div><div class="kpi-meta">${meta}</div></div>`;
 }
-function pct(a,b) { return b?Math.round(a/b*100):0; }
-function setDay(d)  { activeDay=d;  renderDashboard(); }
-function setCar(c)  { activeCar=c;  renderDashboard(); }
-function setInst(i) { activeInst=i; renderDashboard(); }
+function pct(a,b) { return b ? Math.round(a/b*100) : 0; }
+
+function setDay(v)  { activeDay=v;  renderDashboard(); }
+function setCar(v)  { activeCar=v;  renderDashboard(); }
+function setInst(v) { activeInst=v; renderDashboard(); }
 
 // TABLE
 function renderRows(rows) {
