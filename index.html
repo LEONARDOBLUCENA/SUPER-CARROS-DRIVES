@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BI Drives — Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #0b0c10;
+    --surface:   #13151c;
+    --card:      #1a1d27;
+    --border:    #252836;
+    --accent:    #e8354a;
+    --accent2:   #f5a623;
+    --blue:      #3d9be9;
+    --green:     #2ecc71;
+    --purple:    #9b59b6;
+    --text:      #e8eaf0;
+    --muted:     #6b7280;
+    --mono:      'JetBrains Mono', monospace;
+    --display:   'Bebas Neue', sans-serif;
+    --body:      'DM Sans', sans-serif;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--body);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* noise texture overlay */
+  body::before {
+    content:'';
+    position:fixed; inset:0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events:none; z-index:0;
+  }
+
+  /* ─── TOP BAR ─── */
+  .topbar {
+    position: sticky; top:0; z-index:100;
+    background: rgba(11,12,16,0.92);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 60px;
+  }
+  .logo {
+    font-family: var(--display);
+    font-size: 28px;
+    letter-spacing: 3px;
+    color: var(--text);
+  }
+  .logo span { color: var(--accent); }
+  .topbar-right { display:flex; gap:12px; align-items:center; }
+
+  .pill {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 5px 14px;
+    font-size: 12px;
+    color: var(--muted);
+    font-family: var(--mono);
+  }
+  .pill.active { color: var(--green); border-color: var(--green); }
+
+  /* ─── MAIN LAYOUT ─── */
+  .main { max-width: 1400px; margin: 0 auto; padding: 32px; position:relative; z-index:1; }
+
+  /* ─── IMPORT PANEL ─── */
+  .import-panel {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px 32px;
+    margin-bottom: 32px;
+    display: flex;
+    gap: 24px;
+    align-items: flex-end;
+    flex-wrap: wrap;
+  }
+  .import-panel h2 {
+    font-family: var(--display);
+    font-size: 22px;
+    letter-spacing: 2px;
+    color: var(--accent);
+    margin-bottom: 4px;
+  }
+  .import-panel p { font-size: 13px; color: var(--muted); }
+
+  .field-group { display: flex; flex-direction: column; gap: 6px; }
+  .field-group label { font-size: 11px; font-family: var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+
+  input[type="date"] {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    padding: 10px 14px;
+    font-family: var(--mono);
+    font-size: 14px;
+    outline: none;
+    transition: border-color .2s;
+    width: 170px;
+  }
+  input[type="date"]:focus { border-color: var(--accent); }
+
+  .upload-zone {
+    border: 2px dashed var(--border);
+    border-radius: 10px;
+    padding: 12px 20px;
+    cursor: pointer;
+    transition: all .2s;
+    display: flex; align-items: center; gap: 10px;
+    background: var(--surface);
+    font-size: 13px;
+    color: var(--muted);
+    min-width: 240px;
+  }
+  .upload-zone:hover { border-color: var(--accent); color: var(--text); }
+  .upload-zone.has-file { border-color: var(--green); color: var(--green); }
+  .upload-zone .icon { font-size: 20px; }
+  input[type="file"] { display:none; }
+
+  .btn {
+    padding: 11px 24px;
+    border: none; border-radius: 8px;
+    font-family: var(--display);
+    font-size: 16px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all .2s;
+    white-space: nowrap;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: white;
+  }
+  .btn-primary:hover { background: #c42e40; transform: translateY(-1px); }
+  .btn-primary:disabled { background: var(--border); color: var(--muted); cursor:not-allowed; transform:none; }
+
+  .btn-ghost {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: var(--body);
+    font-size: 13px;
+    padding: 8px 16px;
+  }
+  .btn-ghost:hover { border-color: var(--text); color: var(--text); }
+
+  /* ─── FILTER BAR ─── */
+  .filter-bar {
+    display: flex; gap: 12px; align-items: center;
+    margin-bottom: 24px; flex-wrap: wrap;
+  }
+  .filter-bar label { font-size: 11px; font-family: var(--mono); color: var(--muted); text-transform:uppercase; letter-spacing:1px; }
+
+  .day-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+  .chip {
+    padding: 6px 16px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--muted);
+    font-size: 12px;
+    font-family: var(--mono);
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .chip:hover { border-color: var(--accent2); color: var(--accent2); }
+  .chip.active { background: var(--accent); border-color: var(--accent); color: white; }
+  .chip.all { background: var(--surface); }
+  .chip.all.active { background: var(--accent2); border-color: var(--accent2); }
+
+  /* ─── KPI CARDS ─── */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+  .kpi-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 22px;
+    position: relative;
+    overflow: hidden;
+    transition: transform .2s;
+  }
+  .kpi-card:hover { transform: translateY(-2px); }
+  .kpi-card::after {
+    content:'';
+    position:absolute; bottom:0; left:0; right:0;
+    height: 3px;
+  }
+  .kpi-card.red::after   { background: var(--accent); }
+  .kpi-card.gold::after  { background: var(--accent2); }
+  .kpi-card.blue::after  { background: var(--blue); }
+  .kpi-card.green::after { background: var(--green); }
+  .kpi-card.purple::after{ background: var(--purple); }
+
+  .kpi-label { font-size: 10px; font-family: var(--mono); color: var(--muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; }
+  .kpi-value { font-family: var(--display); font-size: 42px; line-height:1; color: var(--text); }
+  .kpi-sub   { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+  /* ─── CHARTS GRID ─── */
+  .charts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 28px;
+  }
+  @media (max-width: 900px) { .charts-grid { grid-template-columns: 1fr; } }
+
+  .chart-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 22px;
+  }
+  .chart-card.wide { grid-column: 1 / -1; }
+  .chart-title {
+    font-family: var(--display);
+    font-size: 16px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    margin-bottom: 16px;
+    text-transform: uppercase;
+  }
+  .chart-title span { color: var(--text); }
+
+  canvas { max-height: 280px; }
+
+  /* ─── DATA TABLE ─── */
+  .table-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 28px;
+  }
+  .table-header {
+    padding: 18px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .table-header h3 { font-family: var(--display); font-size: 18px; letter-spacing: 2px; }
+  .table-search {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 7px 14px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    outline:none;
+    width: 220px;
+    transition: border-color .2s;
+  }
+  .table-search:focus { border-color: var(--blue); }
+  .table-search::placeholder { color: var(--muted); }
+
+  .table-wrap { overflow-x: auto; max-height: 420px; overflow-y: auto; }
+  table { width:100%; border-collapse: collapse; }
+  thead th {
+    background: var(--surface);
+    padding: 10px 16px;
+    text-align: left;
+    font-size: 10px;
+    font-family: var(--mono);
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    position: sticky; top:0; z-index:2;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+  }
+  thead th:hover { color: var(--text); }
+  tbody tr { border-bottom: 1px solid rgba(255,255,255,0.04); transition: background .1s; }
+  tbody tr:hover { background: rgba(255,255,255,0.03); }
+  tbody td { padding: 9px 16px; font-size: 13px; }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-family: var(--mono);
+    font-weight: 700;
+  }
+  .badge-drive  { background: rgba(232,53,74,0.15);  color: var(--accent); }
+  .badge-carona { background: rgba(155,89,182,0.15); color: var(--purple); }
+  .badge-ok     { background: rgba(46,204,113,0.15); color: var(--green); }
+  .badge-agenda { background: rgba(245,166,35,0.15); color: var(--accent2); }
+  .badge-other  { background: rgba(107,114,128,0.15); color: var(--muted); }
+
+  /* ─── EMPTY STATE ─── */
+  .empty-state {
+    text-align: center;
+    padding: 80px 40px;
+    color: var(--muted);
+  }
+  .empty-state .big-icon { font-size: 64px; margin-bottom: 16px; opacity:.4; }
+  .empty-state h3 { font-family: var(--display); font-size: 28px; letter-spacing:3px; margin-bottom:8px; }
+  .empty-state p { font-size: 14px; }
+
+  /* ─── TOAST ─── */
+  .toast {
+    position: fixed; bottom: 24px; right: 24px;
+    background: var(--green); color: #000;
+    padding: 12px 20px; border-radius: 8px;
+    font-family: var(--mono); font-size: 13px; font-weight:700;
+    transform: translateY(80px); opacity:0;
+    transition: all .3s;
+    z-index: 9999;
+  }
+  .toast.show { transform: translateY(0); opacity:1; }
+  .toast.error { background: var(--accent); color: white; }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width:6px; height:6px; }
+  ::-webkit-scrollbar-track { background: var(--surface); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius:3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">BI<span>.</span>DRIVES</div>
+  <div class="topbar-right">
+    <span class="pill" id="rec-count">0 registros</span>
+    <span class="pill active" id="day-count">0 dias</span>
+    <button class="btn btn-ghost" onclick="clearAll()">Limpar Dados</button>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- IMPORT PANEL -->
+  <div class="import-panel">
+    <div>
+      <h2>IMPORTAR PLANILHA</h2>
+      <p>Selecione a data do dia e faça upload do arquivo Excel</p>
+    </div>
+    <div class="field-group">
+      <label>Data do dia</label>
+      <input type="date" id="import-date">
+    </div>
+    <div class="field-group">
+      <label>Arquivo Excel</label>
+      <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()">
+        <span class="icon">📂</span>
+        <span id="file-label">Selecionar arquivo .xlsx</span>
+      </div>
+      <input type="file" id="file-input" accept=".xlsx,.xls" onchange="onFileSelect(this)">
+    </div>
+    <button class="btn btn-primary" id="import-btn" onclick="importData()" disabled>
+      PROCESSAR E SALVAR
+    </button>
+  </div>
+
+  <!-- FILTER BAR -->
+  <div class="filter-bar" id="filter-bar" style="display:none">
+    <label>Filtrar dia:</label>
+    <div class="day-chips" id="day-chips"></div>
+  </div>
+
+  <!-- CONTENT -->
+  <div id="content">
+    <div class="empty-state">
+      <div class="big-icon">🏎</div>
+      <h3>NENHUM DADO AINDA</h3>
+      <p>Importe uma planilha para começar a visualizar o dashboard</p>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── STORAGE ───────────────────────────────────────────────────────────────
+const STORAGE_KEY = 'bi_drives_data';
+
+function loadStorage() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+  } catch { return {}; }
+}
+function saveStorage(data) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+// ─── STATE ──────────────────────────────────────────────────────────────────
+let allData = loadStorage(); // { "01/05/2025": [...records], ... }
+let activeDay = 'all';
+let pendingFile = null;
+let charts = {};
+
+// ─── FILE SELECT ─────────────────────────────────────────────────────────────
+function onFileSelect(input) {
+  if (!input.files[0]) return;
+  pendingFile = input.files[0];
+  const zone = document.getElementById('upload-zone');
+  const lbl  = document.getElementById('file-label');
+  zone.classList.add('has-file');
+  lbl.textContent = pendingFile.name;
+  checkImportReady();
+}
+
+function checkImportReady() {
+  const d = document.getElementById('import-date').value;
+  document.getElementById('import-btn').disabled = !(d && pendingFile);
+}
+document.getElementById('import-date').addEventListener('input', checkImportReady);
+
+// ─── PARSE XLSX ──────────────────────────────────────────────────────────────
+function parseXLSX(file, callback) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    const wb = XLSX.read(e.target.result, { type: 'array' });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null });
+    callback(rows);
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function extractRecords(rows) {
+  const section1Cars = [
+    [0,0,'MUSTANG BLACK'],[0,15,'MUSTANG WHITE'],[0,30,'MUSTANG RED'],
+    [0,45,'718'],[0,60,'PORSCHE 911 CARRERA'],[0,75,'MASERATI GRANCABRIO'],
+    [0,90,'CAMARO BORDO'],[0,105,'MUSTANG 2025'],[0,120,'FERRARI CALIFORNIA'],
+    [0,135,'SHELBY GT-500'],[0,150,'CORVETTE C6'],[0,165,'BMW M3'],
+  ];
+  const section2Cars = [
+    [42,0,'MCLAREN 600LT'],[42,15,'FERRARI PORTOFINO'],
+    [42,30,'LAMBORGHINI GALLARDO'],[42,45,'CORVETTE C7'],
+  ];
+
+  const records = [];
+  function extract(colOffset, carName, dataStart, dataEnd) {
+    for (let i = dataStart; i < Math.min(dataEnd, rows.length); i++) {
+      const row = rows[i];
+      const get = o => { const idx = colOffset+o; return idx < row.length ? row[idx] : null; };
+      const client = get(1);
+      if (!client || typeof client !== 'string' || client.trim().length < 3) continue;
+      const cd = get(5);
+      const cdStr = cd ? String(cd).trim().toUpperCase() : '';
+      const tipo = cdStr === 'D' ? 'Drive' : cdStr === 'C' ? 'Carona' : (cdStr || '-');
+      const vendedor = get(3);
+      const instrutor = get(10);
+      const status = get(14);
+      records.push({
+        carro: carName,
+        cliente: client.trim(),
+        vendedor: vendedor ? String(vendedor).trim() : '',
+        tipo,
+        instrutor: instrutor ? String(instrutor).trim() : '',
+        status: status ? String(status).trim() : '',
+      });
+    }
+  }
+  section1Cars.forEach(([,col,car]) => extract(col, car, 1, 42));
+  section2Cars.forEach(([,col,car]) => extract(col, car, 43, 65));
+  return records;
+}
+
+// ─── IMPORT ───────────────────────────────────────────────────────────────────
+function importData() {
+  if (!pendingFile) return;
+  const rawDate = document.getElementById('import-date').value; // yyyy-mm-dd
+  const [y,m,d] = rawDate.split('-');
+  const dateKey = `${d}/${m}/${y}`;
+
+  parseXLSX(pendingFile, rows => {
+    const records = extractRecords(rows);
+    if (records.length === 0) {
+      showToast('Nenhum registro encontrado!', true);
+      return;
+    }
+    allData[dateKey] = records;
+    saveStorage(allData);
+
+    // reset upload
+    pendingFile = null;
+    document.getElementById('file-input').value = '';
+    document.getElementById('upload-zone').classList.remove('has-file');
+    document.getElementById('file-label').textContent = 'Selecionar arquivo .xlsx';
+    document.getElementById('import-btn').disabled = true;
+
+    activeDay = dateKey;
+    renderAll();
+    showToast(`✓ ${records.length} registros salvos para ${dateKey}`);
+  });
+}
+
+// ─── CLEAR ────────────────────────────────────────────────────────────────────
+function clearAll() {
+  if (!confirm('Apagar todos os dados salvos?')) return;
+  allData = {};
+  saveStorage(allData);
+  activeDay = 'all';
+  renderAll();
+  showToast('Dados apagados');
+}
+
+// ─── RENDER ───────────────────────────────────────────────────────────────────
+function getFilteredRecords() {
+  if (activeDay === 'all') {
+    return Object.values(allData).flat();
+  }
+  return allData[activeDay] || [];
+}
+
+function renderAll() {
+  const days = Object.keys(allData).sort((a,b) => {
+    const pa = a.split('/').reverse().join('');
+    const pb = b.split('/').reverse().join('');
+    return pa.localeCompare(pb);
+  });
+
+  // topbar counts
+  const totalRecs = Object.values(allData).flat().length;
+  document.getElementById('rec-count').textContent = `${totalRecs} registros`;
+  document.getElementById('day-count').textContent = `${days.length} dias`;
+
+  // filter bar
+  const filterBar = document.getElementById('filter-bar');
+  const chipsEl = document.getElementById('day-chips');
+  if (days.length > 0) {
+    filterBar.style.display = 'flex';
+    chipsEl.innerHTML = '';
+    const allChip = document.createElement('div');
+    allChip.className = 'chip all' + (activeDay === 'all' ? ' active' : '');
+    allChip.textContent = 'Todos';
+    allChip.onclick = () => { activeDay='all'; renderAll(); };
+    chipsEl.appendChild(allChip);
+    days.forEach(day => {
+      const chip = document.createElement('div');
+      chip.className = 'chip' + (activeDay === day ? ' active' : '');
+      chip.textContent = day;
+      chip.onclick = () => { activeDay=day; renderAll(); };
+      chipsEl.appendChild(chip);
+    });
+  } else {
+    filterBar.style.display = 'none';
+  }
+
+  const records = getFilteredRecords();
+
+  if (records.length === 0) {
+    document.getElementById('content').innerHTML = `
+      <div class="empty-state">
+        <div class="big-icon">🏎</div>
+        <h3>NENHUM DADO AINDA</h3>
+        <p>Importe uma planilha para começar</p>
+      </div>`;
+    return;
+  }
+
+  // Aggregate
+  const carMap = {}, instMap = {}, vendMap = {};
+  let totalDrive=0, totalCarona=0, totalOK=0, totalAgenda=0;
+  records.forEach(r => {
+    if (!carMap[r.carro]) carMap[r.carro] = {total:0,drive:0,carona:0,ok:0,agenda:0};
+    carMap[r.carro].total++;
+    if (r.tipo==='Drive')  { carMap[r.carro].drive++;  totalDrive++; }
+    if (r.tipo==='Carona') { carMap[r.carro].carona++; totalCarona++; }
+    if (r.status==='OK')    { carMap[r.carro].ok++;    totalOK++; }
+    if (r.status==='AGENDA'){ carMap[r.carro].agenda++; totalAgenda++; }
+
+    const inst = r.instrutor || '(sem instrutor)';
+    if (!instMap[inst]) instMap[inst] = {total:0,drive:0,carona:0};
+    instMap[inst].total++; if (r.tipo==='Drive') instMap[inst].drive++; else if(r.tipo==='Carona') instMap[inst].carona++;
+
+    const vend = r.vendedor || '(sem vendedor)';
+    vendMap[vend] = (vendMap[vend]||0)+1;
+  });
+
+  const sortedCars  = Object.entries(carMap).sort((a,b)=>b[1].total-a[1].total);
+  const sortedInst  = Object.entries(instMap).sort((a,b)=>b[1].total-a[1].total);
+  const sortedVend  = Object.entries(vendMap).sort((a,b)=>b-a);
+
+  // Build HTML
+  document.getElementById('content').innerHTML = `
+    <!-- KPIs -->
+    <div class="kpi-grid">
+      <div class="kpi-card red">
+        <div class="kpi-label">Total Passageiros</div>
+        <div class="kpi-value">${records.length}</div>
+        <div class="kpi-sub">${activeDay==='all' ? 'todos os dias' : activeDay}</div>
+      </div>
+      <div class="kpi-card red">
+        <div class="kpi-label">Drives</div>
+        <div class="kpi-value">${totalDrive}</div>
+        <div class="kpi-sub">${Math.round(totalDrive/records.length*100)}% do total</div>
+      </div>
+      <div class="kpi-card purple">
+        <div class="kpi-label">Caronas</div>
+        <div class="kpi-value">${totalCarona}</div>
+        <div class="kpi-sub">${Math.round(totalCarona/records.length*100)}% do total</div>
+      </div>
+      <div class="kpi-card green">
+        <div class="kpi-label">Status OK</div>
+        <div class="kpi-value">${totalOK}</div>
+        <div class="kpi-sub">${Math.round(totalOK/records.length*100)}% concluídos</div>
+      </div>
+      <div class="kpi-card gold">
+        <div class="kpi-label">Agendados</div>
+        <div class="kpi-value">${totalAgenda}</div>
+        <div class="kpi-sub">aguardando realização</div>
+      </div>
+    </div>
+
+    <!-- CHARTS -->
+    <div class="charts-grid">
+      <div class="chart-card wide">
+        <div class="chart-title"><span>DRIVES POR CARRO</span></div>
+        <canvas id="chart-carros"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title"><span>DRIVE vs CARONA</span> por instrutor</div>
+        <canvas id="chart-instrutores"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title"><span>CLIENTES</span> por vendedor</div>
+        <canvas id="chart-vendedores"></canvas>
+      </div>
+    </div>
+
+    <!-- TABLE -->
+    <div class="table-card">
+      <div class="table-header">
+        <h3>LISTAGEM COMPLETA</h3>
+        <input class="table-search" id="table-search" placeholder="Buscar cliente, carro..." oninput="filterTable(this.value)">
+      </div>
+      <div class="table-wrap">
+        <table id="main-table">
+          <thead>
+            <tr>
+              <th onclick="sortTable(0)">CARRO ↕</th>
+              <th onclick="sortTable(1)">CLIENTE ↕</th>
+              <th onclick="sortTable(2)">VENDEDOR ↕</th>
+              <th onclick="sortTable(3)">TIPO ↕</th>
+              <th onclick="sortTable(4)">INSTRUTOR ↕</th>
+              <th onclick="sortTable(5)">STATUS ↕</th>
+              ${activeDay==='all' ? '<th>DIA</th>' : ''}
+            </tr>
+          </thead>
+          <tbody id="table-body"></tbody>
+        </table>
+      </div>
+    </div>
+  `;
+
+  // Populate table
+  let tableRows = activeDay === 'all'
+    ? Object.entries(allData).flatMap(([day, recs]) => recs.map(r => ({...r, day})))
+    : records.map(r => ({...r, day: activeDay}));
+
+  window._tableRows = tableRows;
+  renderTableRows(tableRows);
+
+  // Render charts
+  setTimeout(() => {
+    renderCarChart(sortedCars);
+    renderInstChart(sortedInst);
+    renderVendChart(sortedVend);
+  }, 50);
+}
+
+// ─── TABLE ───────────────────────────────────────────────────────────────────
+function renderTableRows(rows) {
+  const tbody = document.getElementById('table-body');
+  if (!tbody) return;
+  const showDay = activeDay === 'all';
+  tbody.innerHTML = rows.map(r => `
+    <tr>
+      <td>${r.carro}</td>
+      <td>${r.cliente}</td>
+      <td>${r.vendedor||'—'}</td>
+      <td><span class="badge badge-${r.tipo.toLowerCase()}">${r.tipo}</span></td>
+      <td>${r.instrutor||'—'}</td>
+      <td><span class="badge ${r.status==='OK'?'badge-ok':r.status==='AGENDA'?'badge-agenda':'badge-other'}">${r.status||'—'}</span></td>
+      ${showDay ? `<td style="font-family:var(--mono);font-size:11px;color:var(--muted)">${r.day}</td>` : ''}
+    </tr>
+  `).join('');
+}
+
+function filterTable(q) {
+  const filtered = (window._tableRows||[]).filter(r =>
+    [r.carro,r.cliente,r.vendedor,r.instrutor,r.status].some(v =>
+      v && String(v).toLowerCase().includes(q.toLowerCase())
+    )
+  );
+  renderTableRows(filtered);
+}
+
+let sortDir = {};
+function sortTable(col) {
+  const dir = sortDir[col] = (sortDir[col]||1) * -1;
+  const keys = ['carro','cliente','vendedor','tipo','instrutor','status'];
+  const sorted = [...(window._tableRows||[])].sort((a,b) =>
+    String(a[keys[col]]||'').localeCompare(String(b[keys[col]]||'')) * dir
+  );
+  window._tableRows = sorted;
+  renderTableRows(sorted);
+}
+
+// ─── CHARTS ───────────────────────────────────────────────────────────────────
+const PALETTE = ['#e8354a','#f5a623','#3d9be9','#2ecc71','#9b59b6','#1abc9c','#e67e22','#e74c3c','#3498db','#27ae60','#8e44ad','#16a085'];
+
+function destroyChart(id) {
+  if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+}
+
+function renderCarChart(sortedCars) {
+  destroyChart('carros');
+  const ctx = document.getElementById('chart-carros');
+  if (!ctx) return;
+  const labels = sortedCars.map(([car]) => car);
+  charts['carros'] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Drive',  data: sortedCars.map(([,v])=>v.drive),  backgroundColor: 'rgba(232,53,74,0.85)',  borderRadius: 4 },
+        { label: 'Carona', data: sortedCars.map(([,v])=>v.carona), backgroundColor: 'rgba(155,89,182,0.85)', borderRadius: 4 },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: true,
+      plugins: { legend: { labels: { color: '#8892b0', font: { family: 'JetBrains Mono', size: 11 } } } },
+      scales: {
+        x: { stacked: true, ticks: { color:'#6b7280', font:{family:'JetBrains Mono',size:10} }, grid: { color:'rgba(255,255,255,0.04)' } },
+        y: { stacked: true, ticks: { color:'#6b7280', font:{family:'JetBrains Mono',size:10} }, grid: { color:'rgba(255,255,255,0.06)' } },
+      }
+    }
+  });
+}
+
+function renderInstChart(sortedInst) {
+  destroyChart('inst');
+  const ctx = document.getElementById('chart-instrutores');
+  if (!ctx) return;
+  const top = sortedInst.slice(0,10);
+  charts['inst'] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: top.map(([i])=>i),
+      datasets: [
+        { label:'Drive',  data: top.map(([,v])=>v.drive),  backgroundColor:'rgba(61,155,233,0.85)', borderRadius:4 },
+        { label:'Carona', data: top.map(([,v])=>v.carona), backgroundColor:'rgba(245,166,35,0.85)',  borderRadius:4 },
+      ]
+    },
+    options: {
+      indexAxis: 'y', responsive:true, maintainAspectRatio:true,
+      plugins: { legend: { labels: { color:'#8892b0', font:{family:'JetBrains Mono',size:11} } } },
+      scales: {
+        x: { stacked:true, ticks:{color:'#6b7280',font:{family:'JetBrains Mono',size:10}}, grid:{color:'rgba(255,255,255,0.04)'} },
+        y: { stacked:true, ticks:{color:'#8892b0',font:{family:'JetBrains Mono',size:10}}, grid:{color:'transparent'} },
+      }
+    }
+  });
+}
+
+function renderVendChart(sortedVend) {
+  destroyChart('vend');
+  const ctx = document.getElementById('chart-vendedores');
+  if (!ctx) return;
+  charts['vend'] = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: sortedVend.map(([v])=>v),
+      datasets: [{ data: sortedVend.map(([,n])=>n), backgroundColor: PALETTE, borderWidth:0, hoverOffset:8 }]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:true,
+      plugins: {
+        legend: { position:'right', labels: { color:'#8892b0', font:{family:'JetBrains Mono',size:11}, padding:12 } }
+      }
+    }
+  });
+}
+
+// ─── TOAST ────────────────────────────────────────────────────────────────────
+function showToast(msg, error=false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (error?' error':'');
+  setTimeout(() => { t.className = 'toast' + (error?' error':''); }, 3000);
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+// Set today's date as default
+const today = new Date();
+document.getElementById('import-date').value = today.toISOString().split('T')[0];
+
+renderAll();
+</script>
+</body>
+</html>
