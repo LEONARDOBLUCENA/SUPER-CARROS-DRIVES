@@ -6,291 +6,299 @@
 <title>BI Drives</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Outfit:wght@300;400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg:      #07080d;
-  --s1:      #0e1018;
-  --s2:      #151720;
-  --s3:      #1c1f2e;
-  --border:  #262a3d;
-  --border2: #323650;
-  --red:     #ff3355;
-  --orange:  #ff8c42;
-  --blue:    #4d9fff;
-  --green:   #00d68f;
-  --purple:  #b06cff;
-  --yellow:  #ffd166;
-  --text:    #eef0f8;
-  --text2:   #9ca3c0;
-  --text3:   #5a6080;
-  --mono:    'JetBrains Mono', monospace;
-  --sans:    'Outfit', sans-serif;
-  --display: 'Syne', sans-serif;
+  --bg:      #06070b;
+  --s1:      #0c0e14;
+  --s2:      #111318;
+  --s3:      #181b23;
+  --border:  #1f2333;
+  --border2: #2a2f42;
+  --red:     #e03148;
+  --orange:  #d97706;
+  --blue:    #3b82f6;
+  --green:   #10b981;
+  --purple:  #8b5cf6;
+  --yellow:  #f59e0b;
+  --text:    #e2e5f0;
+  --text2:   #8892aa;
+  --text3:   #4a526a;
+  --mono:    'IBM Plex Mono', monospace;
+  --sans:    'Inter', sans-serif;
 }
 *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
 html, body { height:100%; overflow:hidden; }
-body { background:var(--bg); color:var(--text); font-family:var(--sans); }
+body { background:var(--bg); color:var(--text); font-family:var(--sans); font-size:14px; }
 
-/* LAYOUT */
 .layout { display:flex; height:100vh; }
 
-/* SIDEBAR */
+/* ── SIDEBAR ── */
 .sidebar {
-  width:220px; flex-shrink:0;
+  width:230px; flex-shrink:0;
   background:var(--s1);
   border-right:1px solid var(--border);
   display:flex; flex-direction:column;
 }
-.sidebar-logo {
-  padding:28px 24px 22px;
-  border-bottom:1px solid var(--border);
-}
-.wordmark {
-  font-family:var(--display); font-size:22px; font-weight:800;
-  letter-spacing:1px; color:var(--text); line-height:1;
-}
+.sidebar-logo { padding:24px 20px 20px; border-bottom:1px solid var(--border); }
+.wordmark { font-size:15px; font-weight:700; letter-spacing:.5px; color:var(--text); line-height:1; }
 .wordmark em { color:var(--red); font-style:normal; }
-.sub-title {
-  font-size:10px; font-family:var(--mono);
-  color:var(--text3); letter-spacing:2px;
-  margin-top:5px; text-transform:uppercase;
-}
-.nav { padding:16px 12px; flex:1; display:flex; flex-direction:column; gap:4px; }
+.sub-title { font-size:10px; font-family:var(--mono); color:var(--text3); letter-spacing:2px; margin-top:4px; text-transform:uppercase; }
+
+.nav { padding:12px 10px; flex:1; display:flex; flex-direction:column; gap:2px; }
+.nav-section { font-size:9px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; color:var(--text3); padding:10px 10px 6px; margin-top:4px; }
 .nav-item {
-  display:flex; align-items:center; gap:12px;
-  padding:11px 14px; border-radius:10px;
-  cursor:pointer; transition:all .15s;
-  color:var(--text2); font-size:14px; font-weight:500;
+  display:flex; align-items:center; gap:10px;
+  padding:9px 12px; border-radius:7px;
+  cursor:pointer; transition:all .12s;
+  color:var(--text2); font-size:13px; font-weight:500;
   border:1px solid transparent; user-select:none;
 }
 .nav-item:hover { background:var(--s2); color:var(--text); }
 .nav-item.active { background:var(--s3); color:var(--text); border-color:var(--border2); }
 .nav-item.active .nav-icon { color:var(--red); }
-.nav-icon { font-size:18px; width:22px; text-align:center; }
+.nav-icon { font-size:15px; width:20px; text-align:center; flex-shrink:0; }
 .nav-label { flex:1; }
 .nav-badge {
   font-family:var(--mono); font-size:10px;
   background:var(--red); color:white;
-  border-radius:10px; padding:1px 7px; min-width:22px; text-align:center;
-}
-.sidebar-footer {
-  padding:14px 16px; border-top:1px solid var(--border);
-  font-size:11px; color:var(--text3); font-family:var(--mono); text-align:center;
+  border-radius:20px; padding:1px 6px; min-width:20px; text-align:center;
 }
 
-/* CONTENT */
+.sidebar-footer { padding:12px 16px; border-top:1px solid var(--border); }
+.sidebar-footer-stats { font-size:11px; color:var(--text3); font-family:var(--mono); margin-bottom:8px; }
+.sidebar-actions { display:flex; gap:6px; }
+.sidebar-btn {
+  flex:1; padding:7px 0; border-radius:6px;
+  border:1px solid var(--border2); background:transparent;
+  color:var(--text3); font-size:11px; font-family:var(--mono);
+  cursor:pointer; transition:all .12s; text-align:center;
+}
+.sidebar-btn:hover { border-color:var(--text2); color:var(--text); }
+.sidebar-btn.blue:hover { border-color:var(--blue); color:var(--blue); }
+.sidebar-btn.green:hover { border-color:var(--green); color:var(--green); }
+input#restore-inp { display:none; }
+
+/* ── CONTENT ── */
 .content-area { flex:1; overflow-y:auto; overflow-x:hidden; }
-::-webkit-scrollbar { width:5px; height:5px; }
+::-webkit-scrollbar { width:4px; height:4px; }
 ::-webkit-scrollbar-track { background:transparent; }
-::-webkit-scrollbar-thumb { background:var(--border2); border-radius:3px; }
+::-webkit-scrollbar-thumb { background:var(--border2); border-radius:2px; }
 
-/* PAGES */
-.page { display:none; padding:36px 40px; }
+/* ── PAGES ── */
+.page { display:none; padding:32px 36px; }
 .page.active { display:block; }
-.page-header { margin-bottom:32px; }
-.page-header h1 { font-family:var(--display); font-size:30px; font-weight:800; letter-spacing:-0.5px; }
-.page-header p { color:var(--text2); font-size:14px; margin-top:6px; }
+.page-header { margin-bottom:28px; }
+.page-header h1 { font-size:22px; font-weight:600; letter-spacing:-.3px; color:var(--text); }
+.page-header p { color:var(--text3); font-size:13px; margin-top:4px; }
 
-/* ─── IMPORT ─── */
-.import-grid { display:grid; grid-template-columns:1fr 1fr; gap:24px; max-width:920px; }
-.card { background:var(--s2); border:1px solid var(--border); border-radius:14px; padding:24px; }
-.card-title {
-  font-family:var(--display); font-size:11px; font-weight:700;
-  letter-spacing:2px; text-transform:uppercase; color:var(--text3); margin-bottom:18px;
+/* ── CARDS ── */
+.card { background:var(--s2); border:1px solid var(--border); border-radius:10px; padding:20px; }
+.card-title { font-size:10px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; color:var(--text3); margin-bottom:16px; }
+
+/* ── FORM ── */
+.field { display:flex; flex-direction:column; gap:5px; margin-bottom:14px; }
+.field label { font-size:11px; font-weight:500; color:var(--text3); text-transform:uppercase; letter-spacing:.8px; }
+input[type="date"], input[type="text"], input[type="number"] {
+  background:var(--s3); border:1px solid var(--border); border-radius:7px;
+  color:var(--text); padding:8px 12px; font-family:var(--mono); font-size:12px;
+  outline:none; transition:border-color .15s; width:100%;
 }
-.field { display:flex; flex-direction:column; gap:6px; margin-bottom:16px; }
-.field label { font-size:11px; font-family:var(--mono); color:var(--text3); text-transform:uppercase; letter-spacing:1px; }
-input[type="date"] {
-  background:var(--s3); border:1px solid var(--border); border-radius:8px;
-  color:var(--text); padding:10px 14px; font-family:var(--mono); font-size:13px;
-  outline:none; transition:border-color .2s; width:100%;
-}
-input[type="date"]:focus { border-color:var(--blue); }
+input[type="date"]:focus, input[type="text"]:focus, input[type="number"]:focus { border-color:var(--blue); }
+
 .upload-drop {
-  border:2px dashed var(--border2); border-radius:12px;
-  padding:36px 24px; text-align:center; cursor:pointer;
-  transition:all .2s; background:var(--s3);
+  border:1px dashed var(--border2); border-radius:10px;
+  padding:28px 20px; text-align:center; cursor:pointer;
+  transition:all .15s; background:var(--s3);
 }
-.upload-drop:hover { border-color:var(--blue); background:rgba(77,159,255,.05); }
-.upload-drop.dragover { border-color:var(--green); background:rgba(0,214,143,.07); }
+.upload-drop:hover { border-color:var(--blue); background:rgba(59,130,246,.04); }
+.upload-drop.dragover { border-color:var(--green); background:rgba(16,185,129,.05); }
 .upload-drop.has-file { border-color:var(--green); border-style:solid; }
 .upload-drop.has-file .ud-icon { color:var(--green); }
-.ud-icon { font-size:36px; margin-bottom:10px; display:block; transition:color .2s; color:var(--text3); }
-.ud-title { font-size:14px; font-weight:600; color:var(--text); margin-bottom:4px; }
-.ud-sub { font-size:12px; color:var(--text3); }
+.ud-icon { font-size:28px; margin-bottom:8px; display:block; transition:color .15s; color:var(--text3); }
+.ud-title { font-size:13px; font-weight:500; color:var(--text); margin-bottom:3px; }
+.ud-sub { font-size:11px; color:var(--text3); }
 input[type="file"] { display:none; }
 
+/* ── BUTTONS ── */
 .btn {
-  display:inline-flex; align-items:center; justify-content:center; gap:8px;
-  padding:12px 24px; border:none; border-radius:9px;
-  font-family:var(--display); font-size:15px; font-weight:700;
-  letter-spacing:1px; cursor:pointer; transition:all .2s; width:100%;
+  display:inline-flex; align-items:center; justify-content:center; gap:7px;
+  padding:10px 20px; border:none; border-radius:7px;
+  font-family:var(--sans); font-size:13px; font-weight:600;
+  cursor:pointer; transition:all .15s; width:100%;
 }
-.btn-red { background:var(--red); color:white; }
-.btn-red:hover:not(:disabled) { background:#e0213e; transform:translateY(-1px); box-shadow:0 6px 20px rgba(255,51,85,.3); }
-.btn-red:disabled { background:var(--s3); color:var(--text3); cursor:not-allowed; border:1px solid var(--border); box-shadow:none; transform:none; }
-.btn-ghost { background:transparent; border:1px solid var(--border2); color:var(--text2); font-family:var(--sans); font-size:12px; padding:7px 14px; width:auto; }
-.btn-ghost:hover { border-color:var(--text2); color:var(--text); }
-.btn-export {
-  background: transparent;
-  border: 1px solid var(--green);
-  color: var(--green);
-  font-family: var(--mono);
-  font-size: 11px;
-  font-weight: 600;
-  padding: 7px 14px;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all .15s;
-  white-space: nowrap;
-  width: auto;
-  letter-spacing: .5px;
+.btn-primary { background:var(--red); color:white; }
+.btn-primary:hover:not(:disabled) { background:#c82040; }
+.btn-primary:disabled { background:var(--s3); color:var(--text3); cursor:not-allowed; border:1px solid var(--border); }
+.btn-sm {
+  padding:7px 14px; font-size:12px; font-weight:500; width:auto;
+  border-radius:6px; border:1px solid var(--border2); background:transparent; color:var(--text2);
+  cursor:pointer; transition:all .12s; font-family:var(--sans);
 }
-.btn-export:hover { background: rgba(0,214,143,.1); }
+.btn-sm:hover { border-color:var(--text2); color:var(--text); }
+.btn-sm.green { border-color:var(--green); color:var(--green); }
+.btn-sm.green:hover { background:rgba(16,185,129,.08); }
+.btn-sm.blue { border-color:var(--blue); color:var(--blue); }
+.btn-sm.blue:hover { background:rgba(59,130,246,.08); }
+.btn-sm.red { border-color:var(--red); color:var(--red); }
+.btn-sm.red:hover { background:rgba(224,49,72,.08); }
 
+/* ── IMPORT LOG ── */
 .import-log {
-  background:var(--s3); border:1px solid var(--border); border-radius:10px;
-  padding:14px 16px; font-family:var(--mono); font-size:12px;
-  min-height:90px; max-height:160px; overflow-y:auto;
-  color:var(--text3); line-height:1.9; white-space:pre-wrap;
+  background:var(--s3); border:1px solid var(--border); border-radius:8px;
+  padding:12px 14px; font-family:var(--mono); font-size:11px;
+  min-height:80px; max-height:140px; overflow-y:auto;
+  color:var(--text3); line-height:1.8; white-space:pre-wrap;
 }
 .log-ok { color:var(--green); }
 .log-err { color:var(--red); }
 .log-info { color:var(--blue); }
 
-.days-list { display:flex; flex-direction:column; gap:8px; }
+/* ── DAYS LIST ── */
+.days-list { display:flex; flex-direction:column; gap:6px; max-height:320px; overflow-y:auto; }
 .day-row {
   display:flex; align-items:center; justify-content:space-between;
-  background:var(--s3); border:1px solid var(--border); border-radius:9px;
-  padding:10px 14px; transition:border-color .15s;
+  background:var(--s3); border:1px solid var(--border); border-radius:7px;
+  padding:9px 12px; transition:border-color .12s;
 }
 .day-row:hover { border-color:var(--border2); }
-.day-row-left { display:flex; align-items:center; gap:10px; }
-.day-dot { width:8px; height:8px; border-radius:50%; background:var(--green); flex-shrink:0; }
-.day-date { font-family:var(--mono); font-size:13px; color:var(--text); }
-.day-count { font-size:11px; color:var(--text3); }
-.day-del {
-  background:none; border:none; color:var(--text3); cursor:pointer;
-  font-size:15px; padding:2px 6px; border-radius:5px; transition:all .15s; line-height:1;
-}
-.day-del:hover { color:var(--red); background:rgba(255,51,85,.1); }
-.empty-days { text-align:center; padding:32px; color:var(--text3); font-size:13px; }
+.day-row-left { display:flex; align-items:center; gap:9px; }
+.day-dot { width:6px; height:6px; border-radius:50%; background:var(--green); flex-shrink:0; }
+.day-date { font-family:var(--mono); font-size:12px; color:var(--text); }
+.day-count { font-size:11px; color:var(--text3); margin-top:1px; }
+.day-del { background:none; border:none; color:var(--text3); cursor:pointer; font-size:13px; padding:2px 5px; border-radius:4px; transition:all .12s; line-height:1; }
+.day-del:hover { color:var(--red); background:rgba(224,49,72,.1); }
+.empty-days { text-align:center; padding:24px; color:var(--text3); font-size:12px; }
 
-/* ─── DASHBOARD ─── */
-.filter-bar {
-  display: flex;
-  gap: 16px;
-  align-items: flex-end;
-  margin-bottom: 24px;
-  flex-wrap: wrap;
-  padding: 16px 20px;
-  background: var(--s2);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-}
-.filter-group { display: flex; flex-direction: column; gap: 6px; min-width: 160px; flex: 1; }
-.filter-label { font-size: 10px; font-family: var(--mono); color: var(--text3); text-transform: uppercase; letter-spacing: 1px; }
-.filter-select {
-  background: var(--s3);
-  border: 1px solid var(--border2);
-  border-radius: 8px;
-  color: var(--text);
-  padding: 9px 12px;
-  font-family: var(--mono);
-  font-size: 12px;
-  outline: none;
-  cursor: pointer;
-  transition: border-color .2s;
-  appearance: none;
-  -webkit-appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%235a6080' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 12px center;
-  padding-right: 32px;
-}
-.filter-select:focus { border-color: var(--blue); }
-.filter-select option { background: var(--s3); color: var(--text); }
+/* ── IMPORT GRID ── */
+.import-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; max-width:880px; }
 
-.kpi-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:22px; }
-.kpi {
-  background:var(--s2); border:1px solid var(--border); border-radius:12px;
-  padding:18px 20px; position:relative; overflow:hidden;
-  transition:transform .2s, border-color .2s;
-}
-.kpi:hover { transform:translateY(-2px); border-color:var(--border2); }
-.kpi-bar { position:absolute; top:0; left:0; right:0; height:3px; }
-.kpi-label { font-size:10px; font-family:var(--mono); color:var(--text3); text-transform:uppercase; letter-spacing:1px; margin-bottom:10px; }
-.kpi-val { font-family:var(--display); font-size:36px; font-weight:800; line-height:1; color:var(--text); }
-.kpi-meta { font-size:11px; color:var(--text3); margin-top:5px; }
-
-.charts-row { display:grid; grid-template-columns:2fr 1fr; gap:18px; margin-bottom:18px; }
-.charts-row2 { display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-bottom:22px; }
-.chart-card { background:var(--s2); border:1px solid var(--border); border-radius:14px; padding:20px 22px; }
-.chart-card-title {
-  font-family:var(--display); font-size:11px; font-weight:700;
-  letter-spacing:2px; text-transform:uppercase;
-  color:var(--text3); margin-bottom:16px;
-  display:flex; align-items:center; gap:8px;
-}
-.chart-card-title span { color:var(--text); font-size:13px; }
-canvas { max-height:250px; }
-
-.table-wrap-card { background:var(--s2); border:1px solid var(--border); border-radius:14px; overflow:hidden; }
-.table-toolbar {
-  padding:14px 20px; border-bottom:1px solid var(--border);
-  display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
-}
-.table-toolbar-title { font-family:var(--display); font-size:13px; font-weight:700; letter-spacing:2px; color:var(--text2); text-transform:uppercase; }
-.table-search {
+/* ── GASOLINA ── */
+.gas-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; max-width:880px; }
+.gas-input-area {
   background:var(--s3); border:1px solid var(--border); border-radius:8px;
-  color:var(--text); padding:7px 13px; font-family:var(--mono); font-size:12px;
-  outline:none; width:200px; transition:border-color .2s;
+  padding:12px; font-family:var(--mono); font-size:12px;
+  color:var(--text); width:100%; resize:vertical; min-height:180px;
+  outline:none; transition:border-color .15s; line-height:1.6;
+}
+.gas-input-area:focus { border-color:var(--blue); }
+.gas-input-area::placeholder { color:var(--text3); }
+.gas-list { display:flex; flex-direction:column; gap:6px; max-height:380px; overflow-y:auto; }
+.gas-row {
+  display:flex; align-items:center; justify-content:space-between;
+  background:var(--s3); border:1px solid var(--border); border-radius:7px;
+  padding:9px 12px;
+}
+.gas-row-info { display:flex; flex-direction:column; gap:2px; }
+.gas-date { font-family:var(--mono); font-size:11px; color:var(--text3); }
+.gas-carro { font-size:13px; font-weight:500; color:var(--text); }
+.gas-vals { display:flex; gap:14px; align-items:center; }
+.gas-val { font-family:var(--mono); font-size:12px; color:var(--text2); }
+.gas-val span { color:var(--orange); font-weight:500; }
+.gas-total-bar {
+  background:var(--s2); border:1px solid var(--border); border-radius:8px;
+  padding:14px 16px; display:flex; gap:24px; flex-wrap:wrap; margin-bottom:16px;
+}
+.gas-total-item { display:flex; flex-direction:column; gap:3px; }
+.gas-total-label { font-size:10px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--text3); }
+.gas-total-val { font-family:var(--mono); font-size:18px; font-weight:600; color:var(--orange); }
+
+/* ── FILTER BAR ── */
+.filter-bar {
+  display:flex; gap:12px; align-items:flex-end; margin-bottom:20px;
+  padding:14px 16px; background:var(--s2); border:1px solid var(--border); border-radius:10px;
+  flex-wrap:wrap;
+}
+.filter-group { display:flex; flex-direction:column; gap:5px; min-width:150px; flex:1; }
+.filter-label { font-size:10px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--text3); }
+.filter-select {
+  background:var(--s3); border:1px solid var(--border2); border-radius:7px;
+  color:var(--text); padding:8px 32px 8px 10px; font-family:var(--mono); font-size:12px;
+  outline:none; cursor:pointer; transition:border-color .15s;
+  appearance:none; -webkit-appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%234a526a' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat; background-position:right 10px center;
+}
+.filter-select:focus { border-color:var(--blue); }
+.filter-select option { background:var(--s3); color:var(--text); }
+
+/* ── KPIs ── */
+.kpi-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:20px; }
+.kpi {
+  background:var(--s2); border:1px solid var(--border); border-radius:10px;
+  padding:16px 18px; position:relative; overflow:hidden; transition:border-color .15s;
+}
+.kpi:hover { border-color:var(--border2); }
+.kpi-bar { position:absolute; top:0; left:0; right:0; height:2px; }
+.kpi-label { font-size:10px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--text3); margin-bottom:8px; }
+.kpi-val { font-size:32px; font-weight:300; line-height:1; color:var(--text); letter-spacing:-1px; }
+.kpi-meta { font-size:11px; color:var(--text3); margin-top:4px; font-family:var(--mono); }
+
+/* ── CHARTS ── */
+.charts-row  { display:grid; grid-template-columns:2fr 1fr; gap:16px; margin-bottom:16px; }
+.charts-row2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px; }
+.chart-card { background:var(--s2); border:1px solid var(--border); border-radius:10px; padding:18px 20px; }
+.chart-card-title { font-size:11px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--text3); margin-bottom:14px; display:flex; align-items:center; gap:7px; }
+.chart-card-title span { color:var(--text2); }
+canvas { max-height:240px; }
+
+/* ── TABLE ── */
+.table-wrap-card { background:var(--s2); border:1px solid var(--border); border-radius:10px; overflow:hidden; }
+.table-toolbar {
+  padding:12px 16px; border-bottom:1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;
+}
+.table-toolbar-title { font-size:11px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--text3); }
+.table-search {
+  background:var(--s3); border:1px solid var(--border); border-radius:6px;
+  color:var(--text); padding:6px 12px; font-family:var(--mono); font-size:12px;
+  outline:none; width:180px; transition:border-color .15s;
 }
 .table-search:focus { border-color:var(--blue); }
 .table-search::placeholder { color:var(--text3); }
-.table-scroll { overflow-x:auto; max-height:360px; overflow-y:auto; }
+.table-scroll { overflow-x:auto; max-height:340px; overflow-y:auto; }
 table { width:100%; border-collapse:collapse; }
 thead th {
-  background:var(--s1); padding:9px 16px; text-align:left;
-  font-size:10px; font-family:var(--mono); color:var(--text3);
-  text-transform:uppercase; letter-spacing:1px;
+  background:var(--s1); padding:8px 14px; text-align:left;
+  font-size:10px; font-weight:600; font-family:var(--sans); color:var(--text3);
+  text-transform:uppercase; letter-spacing:.8px;
   position:sticky; top:0; z-index:2; border-bottom:1px solid var(--border);
-  cursor:pointer; white-space:nowrap; transition:color .15s;
+  cursor:pointer; white-space:nowrap; transition:color .12s; user-select:none;
 }
-thead th:hover { color:var(--text); }
-tbody tr { border-bottom:1px solid rgba(255,255,255,.035); transition:background .1s; }
+thead th:hover { color:var(--text2); }
+tbody tr { border-bottom:1px solid rgba(255,255,255,.03); transition:background .08s; }
 tbody tr:last-child { border-bottom:none; }
-tbody tr:hover { background:rgba(255,255,255,.025); }
-tbody td { padding:8px 16px; font-size:12px; white-space:nowrap; }
+tbody tr:hover { background:rgba(255,255,255,.02); }
+tbody td { padding:8px 14px; font-size:12px; white-space:nowrap; color:var(--text2); }
+tbody td.td-main { color:var(--text); font-weight:500; }
 
 .badge {
-  display:inline-block; padding:2px 9px; border-radius:20px;
-  font-size:10px; font-family:var(--mono); font-weight:600; letter-spacing:.5px;
+  display:inline-block; padding:2px 8px; border-radius:4px;
+  font-size:10px; font-family:var(--mono); font-weight:500; letter-spacing:.3px;
 }
-.b-drive  { background:rgba(255,51,85,.12);   color:var(--red); }
-.b-carona { background:rgba(176,108,255,.12);  color:var(--purple); }
-.b-ok     { background:rgba(0,214,143,.12);    color:var(--green); }
-.b-agenda { background:rgba(255,209,102,.12);  color:var(--yellow); }
-.b-other  { background:rgba(90,96,128,.15);    color:var(--text3); }
+.b-drive  { background:rgba(224,49,72,.1);  color:#f87171; }
+.b-carona { background:rgba(139,92,246,.1); color:#a78bfa; }
+.b-ok     { background:rgba(16,185,129,.1); color:#34d399; }
+.b-agenda { background:rgba(245,158,11,.1); color:#fbbf24; }
+.b-other  { background:rgba(74,82,106,.15); color:var(--text3); }
 
-.empty { text-align:center; padding:100px 40px; color:var(--text3); }
-.empty-icon { font-size:56px; opacity:.25; margin-bottom:16px; }
-.empty h2 { font-family:var(--display); font-size:24px; font-weight:800; letter-spacing:2px; color:var(--text2); margin-bottom:8px; }
+/* ── EMPTY ── */
+.empty { text-align:center; padding:80px 32px; color:var(--text3); }
+.empty-icon { font-size:40px; opacity:.2; margin-bottom:12px; }
+.empty h2 { font-size:16px; font-weight:600; color:var(--text2); margin-bottom:6px; letter-spacing:.5px; }
 .empty p { font-size:13px; }
-.empty strong { color:var(--text); }
 
+/* ── TOAST ── */
 .toast {
-  position:fixed; bottom:24px; right:24px;
-  padding:12px 20px; border-radius:10px;
-  font-family:var(--mono); font-size:12px; font-weight:600;
-  transform:translateY(60px); opacity:0;
-  transition:all .3s cubic-bezier(.34,1.56,.64,1);
-  z-index:9999; pointer-events:none;
-  box-shadow:0 8px 32px rgba(0,0,0,.4);
+  position:fixed; bottom:20px; right:20px;
+  padding:10px 16px; border-radius:7px;
+  font-family:var(--mono); font-size:12px; font-weight:500;
+  transform:translateY(50px); opacity:0;
+  transition:all .25s; z-index:9999; pointer-events:none;
+  box-shadow:0 4px 20px rgba(0,0,0,.5);
 }
 .toast.show { transform:translateY(0); opacity:1; }
-.toast.ok  { background:var(--green); color:#021a10; }
+.toast.ok  { background:var(--green); color:#031a0e; }
 .toast.err { background:var(--red);   color:white; }
 </style>
 </head>
@@ -301,35 +309,46 @@ tbody td { padding:8px 16px; font-size:12px; white-space:nowrap; }
   <aside class="sidebar">
     <div class="sidebar-logo">
       <div class="wordmark">BI<em>.</em>DRIVES</div>
-      <div class="sub-title">Dashboard</div>
+      <div class="sub-title">Operations</div>
     </div>
     <nav class="nav">
+      <div class="nav-section">Dados</div>
       <div class="nav-item active" id="nav-import" onclick="switchTab('import')">
-        <span class="nav-icon">📥</span>
+        <span class="nav-icon">↑</span>
         <span class="nav-label">Importar</span>
       </div>
+      <div class="nav-item" id="nav-gas" onclick="switchTab('gas')">
+        <span class="nav-icon">⛽</span>
+        <span class="nav-label">Gasolina</span>
+      </div>
+      <div class="nav-section">Análise</div>
       <div class="nav-item" id="nav-dashboard" onclick="switchTab('dashboard')">
-        <span class="nav-icon">📊</span>
+        <span class="nav-icon">▦</span>
         <span class="nav-label">Dashboard</span>
         <span class="nav-badge" id="days-badge">0</span>
       </div>
     </nav>
-    <div class="sidebar-footer" id="sidebar-stats">0 registros</div>
+    <div class="sidebar-footer">
+      <div class="sidebar-footer-stats" id="sidebar-stats">0 registros · 0 dias</div>
+      <div class="sidebar-actions">
+        <button class="sidebar-btn green" onclick="backupJSON()" title="Exportar backup JSON">⬇ Backup</button>
+        <button class="sidebar-btn blue" onclick="document.getElementById('restore-inp').click()" title="Restaurar backup JSON">↑ Restaurar</button>
+        <input type="file" id="restore-inp" accept=".json" onchange="restoreJSON(this)">
+      </div>
+    </div>
   </aside>
 
   <!-- CONTENT -->
   <main class="content-area">
 
-    <!-- ══ IMPORT ══ -->
+    <!-- ══ IMPORTAR ══ -->
     <section class="page active" id="page-import">
       <div class="page-header">
         <h1>Importar Dados</h1>
-        <p>Selecione a data, faça upload da planilha e salve os dados do dia.</p>
+        <p>Selecione a data e faça upload da planilha do dia.</p>
       </div>
       <div class="import-grid">
-
-        <!-- form -->
-        <div style="display:flex;flex-direction:column;gap:18px;">
+        <div style="display:flex;flex-direction:column;gap:16px;">
           <div class="card">
             <div class="card-title">Nova importação</div>
             <div class="field">
@@ -344,29 +363,86 @@ tbody td { padding:8px 16px; font-size:12px; white-space:nowrap; }
               <div class="ud-sub" id="ud-sub">Arquivos .xlsx ou .xls</div>
             </div>
             <input type="file" id="file-inp" accept=".xlsx,.xls" onchange="onFileSelect(this)">
-            <div style="margin-top:16px;">
-              <button class="btn btn-red" id="imp-btn" onclick="importData()" disabled>
-                ⚡ PROCESSAR E SALVAR
+            <div style="margin-top:14px;">
+              <button class="btn btn-primary" id="imp-btn" onclick="importData()" disabled>
+                Processar e Salvar
               </button>
             </div>
           </div>
           <div class="card">
-            <div class="card-title">Log de importação</div>
+            <div class="card-title">Log</div>
             <div class="import-log" id="imp-log">Aguardando arquivo...</div>
           </div>
         </div>
-
-        <!-- saved days -->
         <div class="card">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
             <div class="card-title" style="margin-bottom:0;">Dias salvos</div>
-            <button class="btn btn-ghost" onclick="clearAllData()">Limpar tudo</button>
+            <button class="btn-sm red" onclick="clearAllData()">Limpar tudo</button>
           </div>
           <div class="days-list" id="days-list">
             <div class="empty-days">Nenhum dia importado ainda.</div>
           </div>
         </div>
+      </div>
+    </section>
 
+    <!-- ══ GASOLINA ══ -->
+    <section class="page" id="page-gas">
+      <div class="page-header">
+        <h1>Gasolina</h1>
+        <p>Registre os gastos com combustível por carro e data.</p>
+      </div>
+      <div class="gas-grid">
+        <div style="display:flex;flex-direction:column;gap:16px;">
+          <div class="card">
+            <div class="card-title">Novo registro</div>
+            <div class="field">
+              <label>Data</label>
+              <input type="date" id="gas-date">
+            </div>
+            <div class="field">
+              <label>Carro</label>
+              <input type="text" id="gas-carro" placeholder="ex: MUSTANG BLACK">
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+              <div class="field" style="margin-bottom:0">
+                <label>Litros</label>
+                <input type="number" id="gas-litros" placeholder="0.00" step="0.01">
+              </div>
+              <div class="field" style="margin-bottom:0">
+                <label>Valor (R$)</label>
+                <input type="number" id="gas-valor" placeholder="0.00" step="0.01">
+              </div>
+            </div>
+            <div class="field" style="margin-top:12px;">
+              <label>Observação (opcional)</label>
+              <input type="text" id="gas-obs" placeholder="posto, tipo de combustível...">
+            </div>
+            <div style="margin-top:4px;">
+              <button class="btn btn-primary" onclick="addGas()">Adicionar Registro</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Colar planilha (TSV/CSV)</div>
+            <textarea class="gas-input-area" id="gas-paste" placeholder="Cole aqui dados copiados do Excel:&#10;Data&#9;Carro&#9;Litros&#9;Valor&#9;Obs&#10;01/05/2025&#9;MUSTANG BLACK&#9;45.5&#9;320.00&#9;Posto X"></textarea>
+            <div style="margin-top:8px;">
+              <button class="btn btn-primary" onclick="pasteGas()">Importar Colado</button>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div id="gas-totals-bar" class="gas-total-bar" style="display:none"></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+            <div class="card-title" style="margin-bottom:0;">Registros</div>
+            <div style="display:flex;gap:6px;">
+              <button class="btn-sm green" onclick="exportGasExcel()">⬇ Excel</button>
+              <button class="btn-sm red" onclick="clearGas()">Limpar</button>
+            </div>
+          </div>
+          <div class="gas-list" id="gas-list">
+            <div class="empty-days">Nenhum registro ainda.</div>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -376,8 +452,6 @@ tbody td { padding:8px 16px; font-size:12px; white-space:nowrap; }
         <h1>Dashboard</h1>
         <p>Análise de drives, caronas, instrutores e vendedores.</p>
       </div>
-
-      <!-- FILTER BAR — stays in DOM, never rebuilt -->
       <div class="filter-bar" id="filter-bar" style="display:none">
         <div class="filter-group">
           <label class="filter-label">Dia</label>
@@ -392,30 +466,32 @@ tbody td { padding:8px 16px; font-size:12px; white-space:nowrap; }
           <select class="filter-select" id="sel-inst" onchange="setInst(this.value)"></select>
         </div>
       </div>
-
       <div id="dash-content">
         <div class="empty">
-          <div class="empty-icon">🏎</div>
+          <div class="empty-icon">▦</div>
           <h2>SEM DADOS</h2>
-          <p>Importe uma planilha na aba <strong>Importar</strong> para começar.</p>
+          <p>Importe uma planilha na aba <strong>Importar</strong>.</p>
         </div>
       </div>
     </section>
 
   </main>
 </div>
-
 <div class="toast" id="toast"></div>
 
 <script>
 // ══ STORAGE ══
-const KEY = 'bi_drives_v2';
-function loadDB() { try { return JSON.parse(localStorage.getItem(KEY)||'{}'); } catch { return {}; } }
-function saveDB(d) { localStorage.setItem(KEY, JSON.stringify(d)); }
+const KEY     = 'bi_drives_v3';
+const GAS_KEY = 'bi_drives_gas_v1';
+function loadDB()  { try { return JSON.parse(localStorage.getItem(KEY)||'{}');     } catch { return {}; } }
+function loadGas() { try { return JSON.parse(localStorage.getItem(GAS_KEY)||'[]'); } catch { return []; } }
+function saveDB(d)  { localStorage.setItem(KEY,     JSON.stringify(d)); }
+function saveGas(g) { localStorage.setItem(GAS_KEY, JSON.stringify(g)); }
 
-let DB = loadDB();
-let activeDay = 'all';
-let activeCar = 'all';
+let DB  = loadDB();
+let GAS = loadGas();
+let activeDay  = 'all';
+let activeCar  = 'all';
 let activeInst = 'all';
 let pendingFile = null;
 let charts = {};
@@ -427,10 +503,43 @@ function switchTab(tab) {
   document.getElementById('page-'+tab).classList.add('active');
   document.getElementById('nav-'+tab).classList.add('active');
   if (tab === 'dashboard') renderDashboard();
+  else if (tab === 'gas') renderGas();
   else refreshSidebar();
 }
 
-// ══ FILE ══
+// ══ BACKUP / RESTORE ══
+function backupJSON() {
+  const payload = { drives: DB, gas: GAS, exported: new Date().toISOString() };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `bi_drives_backup_${new Date().toLocaleDateString('pt-BR').replace(/\//g,'-')}.json`;
+  a.click();
+  showToast('Backup exportado com sucesso');
+}
+
+function restoreJSON(input) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const payload = JSON.parse(e.target.result);
+      if (!payload.drives) throw new Error('Formato inválido');
+      if (!confirm(`Restaurar backup de ${payload.exported ? new Date(payload.exported).toLocaleString('pt-BR') : 'data desconhecida'}?\n\nIsso substituirá os dados atuais.`)) return;
+      DB  = payload.drives || {};
+      GAS = payload.gas    || [];
+      saveDB(DB); saveGas(GAS);
+      refreshSidebar();
+      showToast('Backup restaurado com sucesso');
+    } catch(err) {
+      showToast('Arquivo inválido: ' + err.message, true);
+    }
+  };
+  reader.readAsText(file);
+  input.value = '';
+}
+
+// ══ IMPORT: FILE ══
 function onDragOver(e) { e.preventDefault(); document.getElementById('upload-drop').classList.add('dragover'); }
 function onDragLeave()  { document.getElementById('upload-drop').classList.remove('dragover'); }
 function onDrop(e) {
@@ -442,7 +551,7 @@ function onFileSelect(inp) { if (inp.files[0]) setFile(inp.files[0]); }
 function setFile(f) {
   pendingFile = f;
   document.getElementById('upload-drop').classList.add('has-file');
-  document.getElementById('ud-icon').textContent = '✅';
+  document.getElementById('ud-icon').textContent = '✓';
   document.getElementById('ud-title').textContent = f.name;
   document.getElementById('ud-sub').textContent = (f.size/1024).toFixed(1)+' KB';
   checkReady();
@@ -460,7 +569,6 @@ function log(html) {
   el.scrollTop = el.scrollHeight;
 }
 
-// ══ PARSE XLSX ══
 function parseXLSX(file, cb) {
   const r = new FileReader();
   r.onload = e => {
@@ -484,7 +592,7 @@ function extractRecords(rows) {
       if (!cli || typeof cli!=='string' || cli.trim().length<3) continue;
       const cd=g(5), cds=cd?String(cd).trim().toUpperCase():'';
       out.push({
-        carro: car, cliente: cli.trim(),
+        carro:car, cliente:cli.trim(),
         vendedor: g(3)?String(g(3)).trim():'',
         tipo: cds==='D'?'Drive':cds==='C'?'Carona':cds||'—',
         instrutor: g(10)?String(g(10)).trim():'',
@@ -497,7 +605,6 @@ function extractRecords(rows) {
   return out;
 }
 
-// ══ IMPORT ══
 function importData() {
   if (!pendingFile) return;
   const [y,m,d] = document.getElementById('imp-date').value.split('-');
@@ -505,14 +612,11 @@ function importData() {
   log(`<span class="log-info">Processando ${dateKey}...</span>`);
   parseXLSX(pendingFile, rows => {
     const recs = extractRecords(rows);
-    if (!recs.length) { log(`<span class="log-err">Nenhum registro encontrado.</span>`); showToast('Erro: nenhum registro', true); return; }
+    if (!recs.length) { log(`<span class="log-err">Nenhum registro encontrado.</span>`); showToast('Erro: sem registros', true); return; }
     const upd = !!DB[dateKey];
-    DB[dateKey] = recs;
-    saveDB(DB);
-    log(`<span class="log-ok">✓ ${recs.length} registros salvos — ${dateKey}${upd?' (atualizado)':''}</span>`);
-    log(`<span class="log-ok">  Drives: ${recs.filter(r=>r.tipo==='Drive').length} | Caronas: ${recs.filter(r=>r.tipo==='Carona').length}</span>`);
-    log(`<span class="log-ok">  Carros: ${[...new Set(recs.map(r=>r.carro))].length} | Instrutores: ${[...new Set(recs.map(r=>r.instrutor).filter(Boolean))].length}</span>`);
-    // reset upload
+    DB[dateKey] = recs; saveDB(DB);
+    log(`<span class="log-ok">✓ ${recs.length} registros — ${dateKey}${upd?' (atualizado)':''}</span>`);
+    log(`<span class="log-ok">  Drives: ${recs.filter(r=>r.tipo==='Drive').length}  Caronas: ${recs.filter(r=>r.tipo==='Carona').length}</span>`);
     pendingFile = null;
     document.getElementById('file-inp').value = '';
     document.getElementById('upload-drop').className = 'upload-drop';
@@ -530,12 +634,13 @@ function sortedDays() {
   return Object.keys(DB).sort((a,b)=>a.split('/').reverse().join('').localeCompare(b.split('/').reverse().join('')));
 }
 function refreshSidebar() {
-  const days = sortedDays();
+  const days  = sortedDays();
   const total = Object.values(DB).flat().length;
   document.getElementById('days-badge').textContent = days.length;
   document.getElementById('sidebar-stats').textContent = `${total} reg · ${days.length} dias`;
   const list = document.getElementById('days-list');
-  if (!days.length) { list.innerHTML = '<div class="empty-days">Nenhum dia importado ainda.</div>'; return; }
+  if (!list) return;
+  if (!days.length) { list.innerHTML = '<div class="empty-days">Nenhum dia importado.</div>'; return; }
   list.innerHTML = days.map(d=>`
     <div class="day-row">
       <div class="day-row-left">
@@ -548,24 +653,123 @@ function refreshSidebar() {
       <button class="day-del" onclick="deleteDay('${d}')">✕</button>
     </div>`).join('');
 }
-
 function deleteDay(d) {
-  if (!confirm(`Remover dados de ${d}?`)) return;
+  if (!confirm(`Remover ${d}?`)) return;
   delete DB[d]; saveDB(DB);
   if (activeDay===d) activeDay='all';
-  refreshSidebar();
-  showToast(`Dia ${d} removido`);
+  refreshSidebar(); showToast(`Dia ${d} removido`);
 }
-
 function clearAllData() {
-  if (!confirm('Apagar TODOS os dados?')) return;
+  if (!confirm('Apagar todos os dados de drives?')) return;
   DB={}; saveDB(DB); activeDay='all';
   refreshSidebar(); showToast('Dados apagados');
 }
 
+// ══ GASOLINA ══
+function renderGas() {
+  const list = document.getElementById('gas-list');
+  const bar  = document.getElementById('gas-totals-bar');
+  if (!list) return;
+  if (!GAS.length) {
+    list.innerHTML = '<div class="empty-days">Nenhum registro ainda.</div>';
+    bar.style.display = 'none'; return;
+  }
+  // totals
+  const totalLitros = GAS.reduce((s,g)=>s+(parseFloat(g.litros)||0),0);
+  const totalValor  = GAS.reduce((s,g)=>s+(parseFloat(g.valor)||0),0);
+  const ppl = totalLitros ? (totalValor/totalLitros).toFixed(2) : '—';
+  bar.style.display = 'flex';
+  bar.innerHTML = `
+    <div class="gas-total-item"><div class="gas-total-label">Total Litros</div><div class="gas-total-val">${totalLitros.toFixed(1)} L</div></div>
+    <div class="gas-total-item"><div class="gas-total-label">Total Gasto</div><div class="gas-total-val">R$ ${totalValor.toFixed(2)}</div></div>
+    <div class="gas-total-item"><div class="gas-total-label">Preço Médio / L</div><div class="gas-total-val">R$ ${ppl}</div></div>
+    <div class="gas-total-item"><div class="gas-total-label">Registros</div><div class="gas-total-val">${GAS.length}</div></div>
+  `;
+  const sorted = [...GAS].sort((a,b)=>String(b.data).localeCompare(String(a.data)));
+  list.innerHTML = sorted.map((g,i)=>`
+    <div class="gas-row">
+      <div class="gas-row-info">
+        <div class="gas-date">${g.data}</div>
+        <div class="gas-carro">${g.carro}</div>
+        ${g.obs ? `<div class="gas-date">${g.obs}</div>` : ''}
+      </div>
+      <div class="gas-vals">
+        <div class="gas-val"><span>${parseFloat(g.litros||0).toFixed(1)}</span> L</div>
+        <div class="gas-val">R$ <span>${parseFloat(g.valor||0).toFixed(2)}</span></div>
+        <button class="day-del" onclick="deleteGas(${GAS.indexOf(g)})">✕</button>
+      </div>
+    </div>`).join('');
+}
+
+function addGas() {
+  const data   = document.getElementById('gas-date').value;
+  const carro  = document.getElementById('gas-carro').value.trim().toUpperCase();
+  const litros = document.getElementById('gas-litros').value;
+  const valor  = document.getElementById('gas-valor').value;
+  const obs    = document.getElementById('gas-obs').value.trim();
+  if (!data || !carro) { showToast('Preencha data e carro', true); return; }
+  GAS.push({ data: formatDate(data), carro, litros: litros||0, valor: valor||0, obs });
+  saveGas(GAS);
+  document.getElementById('gas-date').value = '';
+  document.getElementById('gas-carro').value = '';
+  document.getElementById('gas-litros').value = '';
+  document.getElementById('gas-valor').value = '';
+  document.getElementById('gas-obs').value = '';
+  renderGas();
+  showToast('Registro adicionado');
+}
+
+function formatDate(v) {
+  if (!v) return v;
+  if (v.includes('-')) { const [y,m,d]=v.split('-'); return `${d}/${m}/${y}`; }
+  return v;
+}
+
+function pasteGas() {
+  const raw = document.getElementById('gas-paste').value.trim();
+  if (!raw) { showToast('Nada para importar', true); return; }
+  const lines = raw.split('\n').map(l=>l.trim()).filter(Boolean);
+  let count = 0;
+  lines.forEach(line => {
+    const cols = line.split(/\t|;/).map(c=>c.trim());
+    if (cols.length < 2) return;
+    const data   = formatDate(cols[0]);
+    const carro  = cols[1]?.toUpperCase() || '';
+    const litros = cols[2] || 0;
+    const valor  = cols[3] || 0;
+    const obs    = cols[4] || '';
+    if (!data || !carro || carro.length < 2) return;
+    GAS.push({ data, carro, litros, valor, obs });
+    count++;
+  });
+  if (!count) { showToast('Nenhuma linha válida', true); return; }
+  saveGas(GAS);
+  document.getElementById('gas-paste').value = '';
+  renderGas();
+  showToast(`✓ ${count} registros importados`);
+}
+
+function deleteGas(idx) {
+  GAS.splice(idx, 1); saveGas(GAS); renderGas();
+}
+function clearGas() {
+  if (!confirm('Apagar todos os registros de gasolina?')) return;
+  GAS=[]; saveGas(GAS); renderGas(); showToast('Registros apagados');
+}
+function exportGasExcel() {
+  if (!GAS.length) { showToast('Sem dados para exportar', true); return; }
+  const data = [['Data','Carro','Litros','Valor (R$)','Obs'],
+    ...GAS.map(g=>[g.data, g.carro, g.litros, g.valor, g.obs||''])];
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Gasolina');
+  XLSX.writeFile(wb, 'gasolina.xlsx');
+  showToast('Exportado com sucesso');
+}
+
 // ══ DASHBOARD ══
 function getBaseRecords() {
-  return activeDay === 'all' ? Object.values(DB).flat() : (DB[activeDay] || []);
+  return activeDay==='all' ? Object.values(DB).flat() : (DB[activeDay]||[]);
 }
 function getRecords() {
   let recs = getBaseRecords();
@@ -574,24 +778,20 @@ function getRecords() {
   return recs;
 }
 
-// Update the three <select> elements without rebuilding them
 function refreshSelects() {
   const days  = sortedDays();
   const base  = getBaseRecords();
-  const cars  = [...new Set(base.map(r => r.carro).filter(Boolean))].sort();
-  const insts = [...new Set(base.map(r => r.instrutor).filter(Boolean))].sort();
-
-  function populateSel(id, options, current) {
-    const sel = document.getElementById(id);
-    if (!sel) return;
+  const cars  = [...new Set(base.map(r=>r.carro).filter(Boolean))].sort();
+  const insts = [...new Set(base.map(r=>r.instrutor).filter(Boolean))].sort();
+  function pop(id, opts, cur) {
+    const sel = document.getElementById(id); if (!sel) return;
     sel.innerHTML = '<option value="all">Todos</option>' +
-      options.map(o => `<option value="${o}"${o===current?' selected':''}>${o}</option>`).join('');
-    sel.value = current;
+      opts.map(o=>`<option value="${o}"${o===cur?' selected':''}>${o}</option>`).join('');
+    sel.value = cur;
   }
-  populateSel('sel-day',  days,  activeDay);
-  populateSel('sel-car',  cars,  activeCar);
-  populateSel('sel-inst', insts, activeInst);
-
+  pop('sel-day',  days,  activeDay);
+  pop('sel-car',  cars,  activeCar);
+  pop('sel-inst', insts, activeInst);
   const fb = document.getElementById('filter-bar');
   if (fb) fb.style.display = days.length ? 'flex' : 'none';
 }
@@ -600,48 +800,39 @@ function renderDashboard() {
   refreshSidebar();
   const days = sortedDays();
   const content = document.getElementById('dash-content');
-
   refreshSelects();
-
   if (!days.length) {
-    content.innerHTML = `<div class="empty"><div class="empty-icon">🏎</div><h2>SEM DADOS</h2><p>Importe uma planilha na aba <strong>Importar</strong> para começar.</p></div>`;
+    content.innerHTML = `<div class="empty"><div class="empty-icon">▦</div><h2>SEM DADOS</h2><p>Importe uma planilha na aba <strong>Importar</strong>.</p></div>`;
     return;
   }
-
   const records = getRecords();
   const carMap={}, instMap={}, vendMap={};
   let drives=0, caronas=0;
-
   records.forEach(r => {
     if (!carMap[r.carro]) carMap[r.carro]={total:0,drive:0,carona:0};
     carMap[r.carro].total++;
     if (r.tipo==='Drive')  { carMap[r.carro].drive++;  drives++; }
     if (r.tipo==='Carona') { carMap[r.carro].carona++; caronas++; }
-
-    const inst = r.instrutor || '(sem instrutor)';
+    const inst=r.instrutor||'(sem instrutor)';
     if (!instMap[inst]) instMap[inst]={total:0,drive:0,carona:0};
     instMap[inst].total++;
-    if (r.tipo==='Drive')  instMap[inst].drive++;
+    if (r.tipo==='Drive') instMap[inst].drive++;
     else if (r.tipo==='Carona') instMap[inst].carona++;
-
-    const vend = r.vendedor || '(sem vendedor)';
-    vendMap[vend] = (vendMap[vend]||0) + 1;
+    const vend=r.vendedor||'(sem vendedor)';
+    vendMap[vend]=(vendMap[vend]||0)+1;
   });
-
   const sCars = Object.entries(carMap).sort((a,b)=>b[1].total-a[1].total);
   const sInst = Object.entries(instMap).sort((a,b)=>b[1].total-a[1].total);
   const sVend = Object.entries(vendMap).sort((a,b)=>b[1]-a[1]);
   const n = records.length;
-
-  // build table rows
   const trows = (() => {
-    if (activeDay === 'all') {
-      let all = Object.entries(DB).flatMap(([day,recs]) => recs.map(r=>({...r,day})));
-      if (activeCar  !== 'all') all = all.filter(r => r.carro     === activeCar);
-      if (activeInst !== 'all') all = all.filter(r => r.instrutor === activeInst);
+    if (activeDay==='all') {
+      let all = Object.entries(DB).flatMap(([day,recs])=>recs.map(r=>({...r,day})));
+      if (activeCar  !== 'all') all = all.filter(r=>r.carro     === activeCar);
+      if (activeInst !== 'all') all = all.filter(r=>r.instrutor === activeInst);
       return all;
     }
-    return records.map(r => ({...r, day: activeDay}));
+    return records.map(r=>({...r,day:activeDay}));
   })();
   window._trows = trows;
   window._trowsFiltered = trows;
@@ -653,31 +844,31 @@ function renderDashboard() {
       ${kpi('Caronas',caronas,pct(caronas,n)+'% do total','var(--purple)')}
     </div>
     <div class="charts-row">
-      <div class="chart-card"><div class="chart-card-title">🏎 <span>DRIVES POR CARRO</span></div><canvas id="ch-carros"></canvas></div>
-      <div class="chart-card"><div class="chart-card-title">🥧 <span>DRIVE vs CARONA</span></div><canvas id="ch-tipo"></canvas></div>
+      <div class="chart-card"><div class="chart-card-title">▦ <span>Drives por Carro</span></div><canvas id="ch-carros"></canvas></div>
+      <div class="chart-card"><div class="chart-card-title">◎ <span>Drive vs Carona</span></div><canvas id="ch-tipo"></canvas></div>
     </div>
     <div class="charts-row2">
-      <div class="chart-card"><div class="chart-card-title">👨‍🏫 <span>TOP INSTRUTORES</span></div><canvas id="ch-inst"></canvas></div>
-      <div class="chart-card"><div class="chart-card-title">🧑‍💼 <span>VENDEDORES</span></div><canvas id="ch-vend"></canvas></div>
+      <div class="chart-card"><div class="chart-card-title">↑ <span>Top Instrutores</span></div><canvas id="ch-inst"></canvas></div>
+      <div class="chart-card"><div class="chart-card-title">◎ <span>Por Vendedor</span></div><canvas id="ch-vend"></canvas></div>
     </div>
     <div class="table-wrap-card">
       <div class="table-toolbar">
-        <div class="table-toolbar-title">📋 Listagem <span style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-left:8px" id="tbl-count">${trows.length} registros</span></div>
+        <div class="table-toolbar-title">Listagem <span style="font-weight:400;color:var(--text3);font-family:var(--mono);margin-left:6px;font-size:10px" id="tbl-count">${trows.length} registros</span></div>
         <div style="display:flex;gap:8px;align-items:center;">
           <input class="table-search" id="tbl-search" placeholder="Buscar..." oninput="filterTbl(this.value)">
-          <button class="btn btn-export" onclick="exportExcel()">⬇ Excel</button>
+          <button class="btn-sm green" onclick="exportExcel()">⬇ Excel</button>
         </div>
       </div>
       <div class="table-scroll">
         <table>
           <thead><tr>
-            <th onclick="sortTbl(0)">CARRO ↕</th>
-            <th onclick="sortTbl(1)">CLIENTE ↕</th>
-            <th onclick="sortTbl(2)">VENDEDOR ↕</th>
-            <th onclick="sortTbl(3)">TIPO ↕</th>
-            <th onclick="sortTbl(4)">INSTRUTOR ↕</th>
-            <th onclick="sortTbl(5)">STATUS ↕</th>
-            ${activeDay==='all'?'<th>DIA</th>':''}
+            <th onclick="sortTbl(0)">Carro</th>
+            <th onclick="sortTbl(1)">Cliente</th>
+            <th onclick="sortTbl(2)">Vendedor</th>
+            <th onclick="sortTbl(3)">Tipo</th>
+            <th onclick="sortTbl(4)">Instrutor</th>
+            <th onclick="sortTbl(5)">Status</th>
+            ${activeDay==='all'?'<th>Dia</th>':''}
           </tr></thead>
           <tbody id="tbl-body"></tbody>
         </table>
@@ -686,18 +877,15 @@ function renderDashboard() {
 
   renderRows(trows);
   requestAnimationFrame(()=>{
-    buildCarChart(sCars);
-    buildTipoChart(drives, caronas);
-    buildInstChart(sInst);
-    buildVendChart(sVend);
+    buildCarChart(sCars); buildTipoChart(drives,caronas);
+    buildInstChart(sInst); buildVendChart(sVend);
   });
 }
 
 function kpi(label,val,meta,color) {
   return `<div class="kpi"><div class="kpi-bar" style="background:${color}"></div><div class="kpi-label">${label}</div><div class="kpi-val">${val}</div><div class="kpi-meta">${meta}</div></div>`;
 }
-function pct(a,b) { return b ? Math.round(a/b*100) : 0; }
-
+function pct(a,b) { return b?Math.round(a/b*100):0; }
 function setDay(v)  { activeDay=v;  renderDashboard(); }
 function setCar(v)  { activeCar=v;  renderDashboard(); }
 function setInst(v) { activeInst=v; renderDashboard(); }
@@ -708,7 +896,7 @@ function renderRows(rows) {
   const sd = activeDay==='all';
   tbody.innerHTML = rows.map(r=>`<tr>
     <td>${r.carro}</td>
-    <td style="color:var(--text)">${r.cliente}</td>
+    <td class="td-main">${r.cliente}</td>
     <td>${r.vendedor||'—'}</td>
     <td><span class="badge ${r.tipo==='Drive'?'b-drive':r.tipo==='Carona'?'b-carona':'b-other'}">${r.tipo}</span></td>
     <td>${r.instrutor||'—'}</td>
@@ -716,101 +904,91 @@ function renderRows(rows) {
     ${sd?`<td style="font-family:var(--mono);font-size:10px;color:var(--text3)">${r.day}</td>`:''}
   </tr>`).join('');
 }
-
 function filterTbl(q) {
-  const filtered = (window._trows||[]).filter(r=>
-    !q || [r.carro,r.cliente,r.vendedor,r.instrutor,r.status].some(v=>v&&String(v).toLowerCase().includes(q.toLowerCase()))
+  const f = (window._trows||[]).filter(r=>
+    !q||[r.carro,r.cliente,r.vendedor,r.instrutor,r.status].some(v=>v&&String(v).toLowerCase().includes(q.toLowerCase()))
   );
-  window._trowsFiltered = filtered;
-  const cnt = document.getElementById('tbl-count');
-  if (cnt) cnt.textContent = `${filtered.length} registros`;
-  renderRows(filtered);
+  window._trowsFiltered=f;
+  const cnt=document.getElementById('tbl-count');
+  if(cnt) cnt.textContent=`${f.length} registros`;
+  renderRows(f);
 }
-
 function exportExcel() {
-  const rows = window._trowsFiltered || window._trows || [];
-  if (!rows.length) { showToast('Nenhum dado para exportar', true); return; }
-  const showDay = activeDay === 'all';
-  const headers = ['Carro','Cliente','Vendedor','Tipo','Instrutor','Status'];
-  if (showDay) headers.push('Dia');
-  const data = [headers, ...rows.map(r => {
-    const row = [r.carro, r.cliente, r.vendedor||'', r.tipo, r.instrutor||'', r.status||''];
-    if (showDay) row.push(r.day||'');
-    return row;
-  })];
-  const ws = XLSX.utils.aoa_to_sheet(data);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Drives');
-  const label = activeDay !== 'all' ? activeDay.replace(/\//g,'-') : 'todos';
-  const carLabel = activeCar !== 'all' ? '_'+activeCar.replace(/\s/g,'_') : '';
-  const instLabel = activeInst !== 'all' ? '_'+activeInst : '';
-  XLSX.writeFile(wb, `drives_${label}${carLabel}${instLabel}.xlsx`);
-  showToast(`✓ Exportado: ${rows.length} registros`);
+  const rows=window._trowsFiltered||window._trows||[];
+  if(!rows.length){showToast('Sem dados',true);return;}
+  const sd=activeDay==='all';
+  const hdr=['Carro','Cliente','Vendedor','Tipo','Instrutor','Status'];
+  if(sd) hdr.push('Dia');
+  const data=[hdr,...rows.map(r=>{const row=[r.carro,r.cliente,r.vendedor||'',r.tipo,r.instrutor||'',r.status||''];if(sd)row.push(r.day||'');return row;})];
+  const ws=XLSX.utils.aoa_to_sheet(data);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Drives');
+  const lbl=activeDay!=='all'?activeDay.replace(/\//g,'-'):'todos';
+  XLSX.writeFile(wb,`drives_${lbl}.xlsx`);
+  showToast(`✓ ${rows.length} registros exportados`);
 }
-
 let _sd={};
 function sortTbl(col) {
   _sd[col]=(_sd[col]||1)*-1;
   const keys=['carro','cliente','vendedor','tipo','instrutor','status'];
   window._trows=[...(window._trows||[])].sort((a,b)=>String(a[keys[col]]||'').localeCompare(String(b[keys[col]]||''))*_sd[col]);
+  window._trowsFiltered=window._trows;
   renderRows(window._trows);
 }
 
 // CHARTS
-const PAL=['#ff3355','#ff8c42','#4d9fff','#00d68f','#b06cff','#ffd166','#06d6a0','#ef476f','#118ab2','#e76f51','#2a9d8f','#e9c46a'];
-const CD = { responsive:true, maintainAspectRatio:true, plugins:{ legend:{ labels:{ color:'#9ca3c0', font:{ family:'JetBrains Mono', size:10 } } } } };
-
-function dc(id) { if(charts[id]){charts[id].destroy();delete charts[id];} }
+const PAL=['#e03148','#d97706','#3b82f6','#10b981','#8b5cf6','#f59e0b','#06b6d4','#ef4444','#84cc16','#f97316'];
+const CD={responsive:true,maintainAspectRatio:true,plugins:{legend:{labels:{color:'#8892aa',font:{family:'Inter',size:10,weight:'500'}}}}};
+function dc(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
 
 function buildCarChart(s) {
   dc('carros'); const ctx=document.getElementById('ch-carros'); if(!ctx)return;
-  charts['carros']=new Chart(ctx,{ type:'bar', data:{ labels:s.map(([c])=>c), datasets:[
-    {label:'Drive', data:s.map(([,v])=>v.drive), backgroundColor:'rgba(255,51,85,.8)', borderRadius:4, stack:'s'},
-    {label:'Carona',data:s.map(([,v])=>v.carona),backgroundColor:'rgba(176,108,255,.8)',borderRadius:4,stack:'s'},
-  ]}, options:{...CD, scales:{
-    x:{stacked:true,ticks:{color:'#5a6080',font:{family:'JetBrains Mono',size:9},maxRotation:40},grid:{color:'rgba(255,255,255,.04)'}},
-    y:{stacked:true,ticks:{color:'#5a6080',font:{family:'JetBrains Mono',size:10}},grid:{color:'rgba(255,255,255,.06)'}},
+  charts['carros']=new Chart(ctx,{type:'bar',data:{labels:s.map(([c])=>c),datasets:[
+    {label:'Drive', data:s.map(([,v])=>v.drive), backgroundColor:'rgba(224,49,72,.75)', borderRadius:3,stack:'s'},
+    {label:'Carona',data:s.map(([,v])=>v.carona),backgroundColor:'rgba(139,92,246,.75)',borderRadius:3,stack:'s'},
+  ]},options:{...CD,scales:{
+    x:{stacked:true,ticks:{color:'#4a526a',font:{family:'Inter',size:9},maxRotation:35},grid:{color:'rgba(255,255,255,.03)'}},
+    y:{stacked:true,ticks:{color:'#4a526a',font:{family:'Inter',size:10}},grid:{color:'rgba(255,255,255,.05)'}},
   }}});
 }
-
 function buildTipoChart(drives,caronas) {
   dc('tipo'); const ctx=document.getElementById('ch-tipo'); if(!ctx)return;
-  charts['tipo']=new Chart(ctx,{ type:'doughnut', data:{
+  charts['tipo']=new Chart(ctx,{type:'doughnut',data:{
     labels:['Drive','Carona'],
-    datasets:[{data:[drives,caronas],backgroundColor:['rgba(255,51,85,.85)','rgba(176,108,255,.85)'],borderWidth:0,hoverOffset:10}]
-  }, options:CD});
+    datasets:[{data:[drives,caronas],backgroundColor:['rgba(224,49,72,.8)','rgba(139,92,246,.8)'],borderWidth:0,hoverOffset:8}]
+  },options:CD});
 }
-
 function buildInstChart(s) {
   dc('inst'); const ctx=document.getElementById('ch-inst'); if(!ctx)return;
   const top=s.slice(0,10);
-  charts['inst']=new Chart(ctx,{ type:'bar', data:{ labels:top.map(([i])=>i), datasets:[
-    {label:'Drive', data:top.map(([,v])=>v.drive), backgroundColor:'rgba(77,159,255,.8)', borderRadius:3, stack:'s'},
-    {label:'Carona',data:top.map(([,v])=>v.carona),backgroundColor:'rgba(255,209,102,.8)',borderRadius:3,stack:'s'},
-  ]}, options:{...CD, indexAxis:'y', scales:{
-    x:{stacked:true,ticks:{color:'#5a6080',font:{family:'JetBrains Mono',size:10}},grid:{color:'rgba(255,255,255,.04)'}},
-    y:{stacked:true,ticks:{color:'#9ca3c0',font:{family:'JetBrains Mono',size:10}},grid:{color:'transparent'}},
+  charts['inst']=new Chart(ctx,{type:'bar',data:{labels:top.map(([i])=>i),datasets:[
+    {label:'Drive', data:top.map(([,v])=>v.drive), backgroundColor:'rgba(59,130,246,.75)',borderRadius:3,stack:'s'},
+    {label:'Carona',data:top.map(([,v])=>v.carona),backgroundColor:'rgba(245,158,11,.75)',borderRadius:3,stack:'s'},
+  ]},options:{...CD,indexAxis:'y',scales:{
+    x:{stacked:true,ticks:{color:'#4a526a',font:{family:'Inter',size:10}},grid:{color:'rgba(255,255,255,.03)'}},
+    y:{stacked:true,ticks:{color:'#8892aa',font:{family:'Inter',size:10}},grid:{color:'transparent'}},
   }}});
 }
-
 function buildVendChart(s) {
   dc('vend'); const ctx=document.getElementById('ch-vend'); if(!ctx)return;
-  charts['vend']=new Chart(ctx,{ type:'doughnut', data:{
+  charts['vend']=new Chart(ctx,{type:'doughnut',data:{
     labels:s.map(([v])=>v),
-    datasets:[{data:s.map(([,n])=>n),backgroundColor:PAL,borderWidth:0,hoverOffset:10}]
-  }, options:{...CD, plugins:{...CD.plugins, legend:{...CD.plugins.legend, position:'right'}}}});
+    datasets:[{data:s.map(([,n])=>n),backgroundColor:PAL,borderWidth:0,hoverOffset:8}]
+  },options:{...CD,plugins:{...CD.plugins,legend:{...CD.plugins.legend,position:'right'}}}});
 }
 
 // TOAST
 function showToast(msg,err=false) {
   const t=document.getElementById('toast');
   t.textContent=msg; t.className=`toast show ${err?'err':'ok'}`;
-  setTimeout(()=>{ t.className='toast'; },3200);
+  setTimeout(()=>{t.className='toast';},3000);
 }
 
 // INIT
 document.getElementById('imp-date').value = new Date().toISOString().split('T')[0];
+document.getElementById('gas-date').value = new Date().toISOString().split('T')[0];
 refreshSidebar();
+renderGas();
 </script>
 </body>
 </html>
