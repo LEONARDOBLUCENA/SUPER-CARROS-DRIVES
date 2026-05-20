@@ -289,27 +289,48 @@ tbody td.td-main { color:var(--text); font-weight:500; }
 .empty p { font-size:13px; }
 
 /* ── COMISSÕES ── */
-.com-layout { display:grid; grid-template-columns:1fr 1fr; gap:20px; max-width:1100px; }
+.com-top-filter {
+  display:flex; gap:10px; align-items:flex-end; margin-bottom:20px;
+  padding:12px 16px; background:var(--s2); border:1px solid var(--border); border-radius:10px;
+}
+.com-tiers { display:flex; flex-direction:column; gap:36px; }
+.com-tier {
+  display:grid; grid-template-columns:1fr 1fr; gap:20px;
+  padding:20px; background:var(--s2); border:1px solid var(--border); border-radius:12px;
+}
+.tier-header {
+  grid-column:1/-1; display:flex; align-items:center; gap:10px;
+  padding-bottom:14px; border-bottom:1px solid var(--border); margin-bottom:4px;
+}
+.tier-badge {
+  display:inline-flex; align-items:center; padding:3px 12px; border-radius:20px;
+  font-size:11px; font-weight:700; font-family:var(--mono); letter-spacing:1px;
+}
+.tier-badge.normal { background:rgba(59,130,246,.15);  color:var(--blue); }
+.tier-badge.ouro   { background:rgba(245,158,11,.18);  color:var(--yellow); }
+.tier-badge.prata  { background:rgba(148,163,184,.15); color:#94a3b8; }
+.tier-badge.bronze { background:rgba(194,120,79,.15);  color:#c2784f; }
+.tier-title { font-size:14px; font-weight:600; color:var(--text); }
 .com-premissa-table { width:100%; border-collapse:collapse; }
 .com-premissa-table thead th {
-  background:var(--s1); padding:8px 12px; text-align:left;
+  background:var(--s1); padding:7px 12px; text-align:left;
   font-size:10px; font-weight:600; color:var(--text3);
   text-transform:uppercase; letter-spacing:.8px;
-  border-bottom:1px solid var(--border);
+  border-bottom:1px solid var(--border); position:sticky; top:0;
 }
 .com-premissa-table tbody tr { border-bottom:1px solid rgba(255,255,255,.03); }
 .com-premissa-table tbody tr:hover { background:rgba(255,255,255,.02); }
-.com-premissa-table tbody td { padding:7px 12px; font-size:12px; color:var(--text2); }
+.com-premissa-table tbody td { padding:6px 12px; font-size:12px; color:var(--text2); }
 .com-premissa-table tbody td.td-car { color:var(--text); font-weight:500; font-size:11px; }
 .com-premissa-table tbody td.td-val { color:var(--green); font-family:var(--mono); font-weight:600; }
 .com-premissa-table .td-edit {
   background:none; border:none; color:var(--text3); cursor:pointer;
-  font-size:12px; padding:2px 6px; border-radius:4px; transition:all .12s;
+  font-size:11px; padding:2px 5px; border-radius:4px; transition:all .12s;
 }
 .com-premissa-table .td-edit:hover { color:var(--blue); background:rgba(59,130,246,.1); }
 .com-premissa-table .td-del {
   background:none; border:none; color:var(--text3); cursor:pointer;
-  font-size:12px; padding:2px 6px; border-radius:4px; transition:all .12s;
+  font-size:11px; padding:2px 5px; border-radius:4px; transition:all .12s;
 }
 .com-premissa-table .td-del:hover { color:var(--red); background:rgba(224,49,72,.1); }
 .com-premissa-table input.inline-edit {
@@ -317,33 +338,31 @@ tbody td.td-main { color:var(--text); font-weight:500; }
   color:var(--text); padding:3px 8px; font-family:var(--mono); font-size:12px;
   outline:none; width:80px;
 }
-.com-filter-bar {
-  display:flex; gap:10px; align-items:flex-end; margin-bottom:18px;
-  padding:12px 14px; background:var(--s2); border:1px solid var(--border); border-radius:10px;
-  flex-wrap:wrap;
-}
 .com-inst-table { width:100%; border-collapse:collapse; }
 .com-inst-table thead th {
-  background:var(--s1); padding:8px 14px; text-align:left;
+  background:var(--s1); padding:7px 12px; text-align:left;
   font-size:10px; font-weight:600; color:var(--text3);
   text-transform:uppercase; letter-spacing:.8px; border-bottom:1px solid var(--border);
   position:sticky; top:0;
 }
 .com-inst-table tbody tr { border-bottom:1px solid rgba(255,255,255,.03); transition:background .08s; }
 .com-inst-table tbody tr:hover { background:rgba(255,255,255,.02); }
-.com-inst-table tbody td { padding:8px 14px; font-size:12px; color:var(--text2); }
+.com-inst-table tbody td { padding:7px 12px; font-size:12px; color:var(--text2); }
 .com-inst-table td.td-main { color:var(--text); font-weight:500; }
 .com-inst-table td.td-num  { font-family:var(--mono); color:var(--text); text-align:right; }
 .com-inst-table td.td-val  { font-family:var(--mono); color:var(--green); font-weight:600; text-align:right; }
 .com-inst-table tfoot td {
-  padding:9px 14px; font-size:12px; font-weight:600; font-family:var(--mono);
-  border-top:1px solid var(--border2); color:var(--text);
-  background:var(--s2);
+  padding:8px 12px; font-size:12px; font-weight:600; font-family:var(--mono);
+  border-top:1px solid var(--border2); color:var(--text); background:var(--s2);
 }
 .com-inst-table tfoot td.tf-val { color:var(--green); text-align:right; }
 .rank-bar {
-  display:inline-block; height:4px; border-radius:2px;
-  background:var(--blue); opacity:.6; vertical-align:middle; margin-left:8px;
+  display:inline-block; height:3px; border-radius:2px;
+  background:var(--blue); opacity:.5; vertical-align:middle; margin-left:8px;
+}
+.com-add-row {
+  display:grid; grid-template-columns:1fr 110px auto; gap:8px; align-items:end;
+  padding:10px 12px; background:var(--s3); border-top:1px solid var(--border);
 }
 
 /* ── TOAST ── */
