@@ -288,6 +288,64 @@ tbody td.td-main { color:var(--text); font-weight:500; }
 .empty h2 { font-size:16px; font-weight:600; color:var(--text2); margin-bottom:6px; letter-spacing:.5px; }
 .empty p { font-size:13px; }
 
+/* ── COMISSÕES ── */
+.com-layout { display:grid; grid-template-columns:1fr 1fr; gap:20px; max-width:1100px; }
+.com-premissa-table { width:100%; border-collapse:collapse; }
+.com-premissa-table thead th {
+  background:var(--s1); padding:8px 12px; text-align:left;
+  font-size:10px; font-weight:600; color:var(--text3);
+  text-transform:uppercase; letter-spacing:.8px;
+  border-bottom:1px solid var(--border);
+}
+.com-premissa-table tbody tr { border-bottom:1px solid rgba(255,255,255,.03); }
+.com-premissa-table tbody tr:hover { background:rgba(255,255,255,.02); }
+.com-premissa-table tbody td { padding:7px 12px; font-size:12px; color:var(--text2); }
+.com-premissa-table tbody td.td-car { color:var(--text); font-weight:500; font-size:11px; }
+.com-premissa-table tbody td.td-val { color:var(--green); font-family:var(--mono); font-weight:600; }
+.com-premissa-table .td-edit {
+  background:none; border:none; color:var(--text3); cursor:pointer;
+  font-size:12px; padding:2px 6px; border-radius:4px; transition:all .12s;
+}
+.com-premissa-table .td-edit:hover { color:var(--blue); background:rgba(59,130,246,.1); }
+.com-premissa-table .td-del {
+  background:none; border:none; color:var(--text3); cursor:pointer;
+  font-size:12px; padding:2px 6px; border-radius:4px; transition:all .12s;
+}
+.com-premissa-table .td-del:hover { color:var(--red); background:rgba(224,49,72,.1); }
+.com-premissa-table input.inline-edit {
+  background:var(--s3); border:1px solid var(--blue); border-radius:5px;
+  color:var(--text); padding:3px 8px; font-family:var(--mono); font-size:12px;
+  outline:none; width:80px;
+}
+.com-filter-bar {
+  display:flex; gap:10px; align-items:flex-end; margin-bottom:18px;
+  padding:12px 14px; background:var(--s2); border:1px solid var(--border); border-radius:10px;
+  flex-wrap:wrap;
+}
+.com-inst-table { width:100%; border-collapse:collapse; }
+.com-inst-table thead th {
+  background:var(--s1); padding:8px 14px; text-align:left;
+  font-size:10px; font-weight:600; color:var(--text3);
+  text-transform:uppercase; letter-spacing:.8px; border-bottom:1px solid var(--border);
+  position:sticky; top:0;
+}
+.com-inst-table tbody tr { border-bottom:1px solid rgba(255,255,255,.03); transition:background .08s; }
+.com-inst-table tbody tr:hover { background:rgba(255,255,255,.02); }
+.com-inst-table tbody td { padding:8px 14px; font-size:12px; color:var(--text2); }
+.com-inst-table td.td-main { color:var(--text); font-weight:500; }
+.com-inst-table td.td-num  { font-family:var(--mono); color:var(--text); text-align:right; }
+.com-inst-table td.td-val  { font-family:var(--mono); color:var(--green); font-weight:600; text-align:right; }
+.com-inst-table tfoot td {
+  padding:9px 14px; font-size:12px; font-weight:600; font-family:var(--mono);
+  border-top:1px solid var(--border2); color:var(--text);
+  background:var(--s2);
+}
+.com-inst-table tfoot td.tf-val { color:var(--green); text-align:right; }
+.rank-bar {
+  display:inline-block; height:4px; border-radius:2px;
+  background:var(--blue); opacity:.6; vertical-align:middle; margin-left:8px;
+}
+
 /* ── TOAST ── */
 .toast {
   position:fixed; bottom:20px; right:20px;
@@ -322,6 +380,10 @@ tbody td.td-main { color:var(--text); font-weight:500; }
         <span class="nav-label">Gasolina</span>
       </div>
       <div class="nav-section">Análise</div>
+      <div class="nav-item" id="nav-comissoes" onclick="switchTab('comissoes')">
+        <span class="nav-icon">$</span>
+        <span class="nav-label">Comissões</span>
+      </div>
       <div class="nav-item" id="nav-dashboard" onclick="switchTab('dashboard')">
         <span class="nav-icon">▦</span>
         <span class="nav-label">Dashboard</span>
@@ -475,6 +537,103 @@ tbody td.td-main { color:var(--text); font-weight:500; }
       </div>
     </section>
 
+    <!-- ══ COMISSÕES ══ -->
+    <section class="page" id="page-comissoes">
+      <div class="page-header">
+        <h1>Comissões</h1>
+        <p>Premissas de valor por carro e resumo de drives por instrutor.</p>
+      </div>
+
+      <div class="com-layout">
+
+        <!-- LEFT: premissas -->
+        <div style="display:flex;flex-direction:column;gap:16px;">
+          <div class="card">
+            <div class="card-title">Cadastrar Premissa</div>
+            <div style="display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:end;">
+              <div class="field" style="margin-bottom:0">
+                <label>Carro</label>
+                <select class="filter-select" id="com-car-sel" style="width:100%"></select>
+              </div>
+              <div class="field" style="margin-bottom:0">
+                <label>Valor por Drive (R$)</label>
+                <input type="number" id="com-valor" placeholder="0.00" step="0.01" style="width:130px">
+              </div>
+              <button class="btn btn-primary" style="width:auto;padding:8px 18px;align-self:end" onclick="addPremissa()">Salvar</button>
+            </div>
+          </div>
+
+          <div class="card" style="padding:0;overflow:hidden;">
+            <div class="table-toolbar" style="padding:12px 16px;">
+              <div class="table-toolbar-title">Premissas cadastradas</div>
+              <button class="btn-sm green" onclick="exportPremissasExcel()">⬇ Excel</button>
+            </div>
+            <div style="max-height:420px;overflow-y:auto;">
+              <table class="com-premissa-table">
+                <thead>
+                  <tr>
+                    <th>Carro</th>
+                    <th style="text-align:right">Valor / Drive</th>
+                    <th style="text-align:center">Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="premissa-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT: instrutores -->
+        <div style="display:flex;flex-direction:column;gap:16px;">
+          <div class="com-filter-bar">
+            <div class="filter-group" style="min-width:110px;flex:none;">
+              <label class="filter-label">Ano</label>
+              <select class="filter-select" id="com-ano" onchange="renderComissoes()"></select>
+            </div>
+            <div class="filter-group" style="min-width:130px;flex:none;">
+              <label class="filter-label">Mês</label>
+              <select class="filter-select" id="com-mes" onchange="renderComissoes()">
+                <option value="all">Todos</option>
+                <option value="01">Janeiro</option>
+                <option value="02">Fevereiro</option>
+                <option value="03">Março</option>
+                <option value="04">Abril</option>
+                <option value="05">Maio</option>
+                <option value="06">Junho</option>
+                <option value="07">Julho</option>
+                <option value="08">Agosto</option>
+                <option value="09">Setembro</option>
+                <option value="10">Outubro</option>
+                <option value="11">Novembro</option>
+                <option value="12">Dezembro</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="card" style="padding:0;overflow:hidden;flex:1;">
+            <div class="table-toolbar" style="padding:12px 16px;">
+              <div class="table-toolbar-title">Drives por Instrutor</div>
+              <button class="btn-sm green" onclick="exportComissoesExcel()">⬇ Excel</button>
+            </div>
+            <div style="max-height:500px;overflow-y:auto;">
+              <table class="com-inst-table">
+                <thead>
+                  <tr>
+                    <th>Instrutor</th>
+                    <th style="text-align:right">Drives</th>
+                    <th style="text-align:right">Comissão Est.</th>
+                  </tr>
+                </thead>
+                <tbody id="com-inst-body"></tbody>
+                <tfoot id="com-inst-foot"></tfoot>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
   </main>
 </div>
 <div class="toast" id="toast"></div>
@@ -504,12 +663,13 @@ function switchTab(tab) {
   document.getElementById('nav-'+tab).classList.add('active');
   if (tab === 'dashboard') renderDashboard();
   else if (tab === 'gas') renderGas();
+  else if (tab === 'comissoes') { populateCarSel(); renderComissoes(); }
   else refreshSidebar();
 }
 
 // ══ BACKUP / RESTORE ══
 function backupJSON() {
-  const payload = { drives: DB, gas: GAS, exported: new Date().toISOString() };
+  const payload = { drives: DB, gas: GAS, com: COM, exported: new Date().toISOString() };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
@@ -528,7 +688,8 @@ function restoreJSON(input) {
       if (!confirm(`Restaurar backup de ${payload.exported ? new Date(payload.exported).toLocaleString('pt-BR') : 'data desconhecida'}?\n\nIsso substituirá os dados atuais.`)) return;
       DB  = payload.drives || {};
       GAS = payload.gas    || [];
-      saveDB(DB); saveGas(GAS);
+      COM = payload.com    || {};
+      saveDB(DB); saveGas(GAS); saveCom(COM);
       refreshSidebar();
       showToast('Backup restaurado com sucesso');
     } catch(err) {
@@ -1018,6 +1179,222 @@ function showToast(msg,err=false) {
   t.textContent=msg; t.className=`toast show ${err?'err':'ok'}`;
   setTimeout(()=>{t.className='toast';},3000);
 }
+
+// ══ COMISSÕES ══
+const COM_KEY = 'bi_drives_com_v1';
+function loadCom()  { try { return JSON.parse(localStorage.getItem(COM_KEY)||'{}'); } catch { return {}; } }
+function saveCom(c) { localStorage.setItem(COM_KEY, JSON.stringify(c)); }
+let COM = loadCom(); // { 'MUSTANG BLACK': 50.00, ... }
+
+// All known cars list (for the select dropdown)
+const ALL_CARS = [
+  'MUSTANG BLACK','MUSTANG WHITE','MUSTANG RED','718','PORSCHE 911 CARRERA',
+  'MASERATI GRANCABRIO','CAMARO BORDO','MUSTANG 2025','FERRARI CALIFORNIA',
+  'SHELBY GT-500','CORVETTE C6','BMW M3','FERRARI 360 MODENA','CAMARO AMARELO',
+  'TOYOTA SUPRA','AUDI RS6','PORSCHE 911 CARRERA S','DODGE CHALLENGER',
+  'MUSTANG 5.0','PORSCHE BOXSTER','MUSTANG GT','MCLAREN 600LT',
+  'FERRARI PORTOFINO','LAMBORGHINI GALLARDO','CORVETTE C7',
+  'CALIFORNIA AMARELA','CAMARO BRANCO'
+];
+
+function populateCarSel() {
+  const sel = document.getElementById('com-car-sel'); if (!sel) return;
+  // Sort: cars with premissa first, then rest
+  const withVal  = ALL_CARS.filter(c => COM[c] != null).sort();
+  const withoutVal = ALL_CARS.filter(c => COM[c] == null).sort();
+  sel.innerHTML = [...withVal, ...withoutVal]
+    .map(c => `<option value="${c}">${c}${COM[c]!=null?' ✓':''}</option>`).join('');
+}
+
+function addPremissa() {
+  const car = document.getElementById('com-car-sel').value;
+  const val = parseFloat(document.getElementById('com-valor').value);
+  if (!car || isNaN(val) || val < 0) { showToast('Preencha carro e valor', true); return; }
+  COM[car] = val;
+  saveCom(COM);
+  document.getElementById('com-valor').value = '';
+  renderPremissas();
+  populateCarSel();
+  renderComissoes();
+  showToast(`✓ ${car}: R$ ${val.toFixed(2)}`);
+}
+
+function deletePremissa(car) {
+  delete COM[car]; saveCom(COM);
+  renderPremissas(); populateCarSel(); renderComissoes();
+  showToast(`Premissa de ${car} removida`);
+}
+
+function startEditPremissa(car) {
+  const row = document.getElementById('prow-' + CSS.escape(car));
+  if (!row) return;
+  const td = row.querySelector('.td-val');
+  const cur = COM[car] || 0;
+  td.innerHTML = `<input class="inline-edit" id="edit-${CSS.escape(car)}" type="number" value="${cur}" step="0.01" onkeydown="if(event.key==='Enter')saveEditPremissa('${car.replace(/'/g,"\'")}'); if(event.key==='Escape')renderPremissas();">`;
+  document.getElementById('edit-' + CSS.escape(car))?.focus();
+}
+
+function saveEditPremissa(car) {
+  const inp = document.getElementById('edit-' + CSS.escape(car));
+  if (!inp) return;
+  const val = parseFloat(inp.value);
+  if (isNaN(val) || val < 0) { showToast('Valor inválido', true); return; }
+  COM[car] = val; saveCom(COM);
+  renderPremissas(); populateCarSel(); renderComissoes();
+  showToast(`✓ ${car} atualizado`);
+}
+
+function renderPremissas() {
+  const tbody = document.getElementById('premissa-body'); if (!tbody) return;
+  const entries = ALL_CARS.map(car => [car, COM[car]]);
+  if (!entries.some(([,v]) => v != null)) {
+    tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;padding:24px;color:var(--text3);font-size:12px;">Nenhuma premissa cadastrada ainda.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = entries.map(([car, val]) => `
+    <tr id="prow-${CSS.escape(car)}">
+      <td class="td-car">${car}</td>
+      <td class="td-val" style="text-align:right">${val != null ? 'R$ '+val.toFixed(2) : '<span style="color:var(--text3);font-size:11px">—</span>'}</td>
+      <td style="text-align:center;white-space:nowrap">
+        ${val != null ? `<button class="td-edit" onclick="startEditPremissa('${car.replace(/'/g,"\'")}')">editar</button>
+        <button class="td-del" onclick="deletePremissa('${car.replace(/'/g,"\'")}')">✕</button>` : ''}
+      </td>
+    </tr>`).join('');
+}
+
+function getComYears() {
+  const years = new Set();
+  Object.keys(DB).forEach(dateKey => {
+    const parts = dateKey.split('/');
+    if (parts.length === 3) years.add(parts[2]);
+  });
+  return [...years].sort();
+}
+
+function populateComFilters() {
+  const anoSel = document.getElementById('com-ano'); if (!anoSel) return;
+  const years = getComYears();
+  const curYear = anoSel.value;
+  anoSel.innerHTML = '<option value="all">Todos</option>' +
+    years.map(y => `<option value="${y}"${y===curYear?' selected':''}>${y}</option>`).join('');
+  if (!curYear && years.length) anoSel.value = years[years.length - 1];
+}
+
+function getFilteredComRecords() {
+  const ano = document.getElementById('com-ano')?.value || 'all';
+  const mes = document.getElementById('com-mes')?.value || 'all';
+  let records = [];
+  Object.entries(DB).forEach(([dateKey, recs]) => {
+    const parts = dateKey.split('/'); // DD/MM/YYYY
+    if (parts.length !== 3) return;
+    const [dd, mm, yyyy] = parts;
+    if (ano !== 'all' && yyyy !== ano) return;
+    if (mes !== 'all' && mm !== mes) return;
+    recs.forEach(r => records.push(r));
+  });
+  return records;
+}
+
+function renderComissoes() {
+  populateComFilters();
+  renderPremissas();
+  const tbody = document.getElementById('com-inst-body');
+  const tfoot = document.getElementById('com-inst-foot');
+  if (!tbody) return;
+
+  const records = getFilteredComRecords().filter(r => r.tipo === 'Drive');
+  if (!records.length) {
+    tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;padding:32px;color:var(--text3);font-size:12px;">Nenhum drive no período selecionado.</td></tr>`;
+    tfoot.innerHTML = '';
+    return;
+  }
+
+  // Count drives per instructor, also track per car for commission calculation
+  const instMap = {};
+  records.forEach(r => {
+    const inst = r.instrutor || '(sem instrutor)';
+    if (!instMap[inst]) instMap[inst] = { drives: 0, carMap: {} };
+    instMap[inst].drives++;
+    const car = r.carro || '';
+    instMap[inst].carMap[car] = (instMap[inst].carMap[car] || 0) + 1;
+  });
+
+  // Calculate estimated commission per instructor
+  function calcComissao(carMap) {
+    let total = 0;
+    Object.entries(carMap).forEach(([car, count]) => {
+      const val = COM[car];
+      if (val != null) total += val * count;
+    });
+    return total;
+  }
+
+  const sorted = Object.entries(instMap)
+    .map(([inst, data]) => ({ inst, drives: data.drives, com: calcComissao(data.carMap) }))
+    .sort((a, b) => b.drives - a.drives);
+
+  const maxDrives = sorted[0]?.drives || 1;
+  const totalDrives = sorted.reduce((s, r) => s + r.drives, 0);
+  const totalCom    = sorted.reduce((s, r) => s + r.com, 0);
+  const hasCom      = sorted.some(r => r.com > 0);
+
+  tbody.innerHTML = sorted.map((row, i) => {
+    const barW = Math.round((row.drives / maxDrives) * 80);
+    return `<tr>
+      <td class="td-main">
+        ${row.inst}
+        <span class="rank-bar" style="width:${barW}px"></span>
+      </td>
+      <td class="td-num">${row.drives}</td>
+      <td class="td-val">${hasCom && row.com > 0 ? 'R$ '+row.com.toFixed(2) : '<span style="color:var(--text3)">—</span>'}</td>
+    </tr>`;
+  }).join('');
+
+  tfoot.innerHTML = `<tr>
+    <td>TOTAL</td>
+    <td class="td-num" style="text-align:right;font-family:var(--mono)">${totalDrives}</td>
+    <td class="tf-val">${hasCom ? 'R$ '+totalCom.toFixed(2) : '—'}</td>
+  </tr>`;
+}
+
+function exportPremissasExcel() {
+  const rows = [['Carro', 'Valor por Drive (R$)'],
+    ...ALL_CARS.filter(c => COM[c] != null).map(c => [c, COM[c]])];
+  if (rows.length === 1) { showToast('Sem premissas para exportar', true); return; }
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  const wb2 = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb2, ws, 'Premissas');
+  XLSX.writeFile(wb2, 'premissas_comissao.xlsx');
+  showToast('Exportado com sucesso');
+}
+
+function exportComissoesExcel() {
+  const records = getFilteredComRecords().filter(r => r.tipo === 'Drive');
+  if (!records.length) { showToast('Sem dados no período', true); return; }
+  const instMap = {};
+  records.forEach(r => {
+    const inst = r.instrutor || '(sem instrutor)';
+    if (!instMap[inst]) instMap[inst] = { drives: 0, carMap: {} };
+    instMap[inst].drives++;
+    instMap[inst].carMap[r.carro] = (instMap[inst].carMap[r.carro] || 0) + 1;
+  });
+  function calcCom(carMap) {
+    return Object.entries(carMap).reduce((s,[car,cnt]) => s + (COM[car]||0)*cnt, 0);
+  }
+  const sorted = Object.entries(instMap)
+    .map(([inst,d]) => [inst, d.drives, calcCom(d.carMap)])
+    .sort((a,b) => b[1]-a[1]);
+  const rows = [['Instrutor','Drives','Comissão Est. (R$)'], ...sorted.map(([i,d,c]) => [i,d,c.toFixed(2)])];
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  const wb2 = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb2, ws, 'Comissões');
+  const ano = document.getElementById('com-ano')?.value || 'all';
+  const mes = document.getElementById('com-mes')?.value || 'all';
+  XLSX.writeFile(wb2, `comissoes_${ano}_${mes}.xlsx`);
+  showToast('Exportado com sucesso');
+}
+
+// ══ UPDATE switchTab and backupJSON to include COM ══
 
 // INIT
 document.getElementById('imp-date').value = new Date().toISOString().split('T')[0];
