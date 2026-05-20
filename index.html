@@ -602,17 +602,19 @@ function extractRecords(rows) {
     [165, 'FERRARI 360 MODENA',    12, 23],
     [165, 'TOYOTA SUPRA',          23, 33],
     [165, 'AUDI RS6',              34, 43],
-    // Sub-section B — header row 32, cols 60-120, data rows 33-42
+    // Sub-section B — header row 32, cols 60-120, data rows 33-50 (Mustang GT continues into block 2)
     [60,  'PORSCHE 911 CARRERA S', 33, 43],
     [75,  'DODGE CHALLENGER',      33, 43],
     [90,  'MUSTANG 5.0',           33, 43],
     [105, 'PORSCHE BOXSTER',       33, 43],
-    [120, 'MUSTANG GT',            33, 43],
+    [120, 'MUSTANG GT',            33, 51],  // continues past block boundary to row 50
     // Section 2 — header row 42, data rows 43-64
     [0,   'MCLAREN 600LT',         43, 65],
     [15,  'FERRARI PORTOFINO',     43, 65],
     [30,  'LAMBORGHINI GALLARDO',  43, 65],
     [45,  'CORVETTE C7',           43, 65],
+    // Col 150: Camaro Amarelo second section continues in block 2 rows 44-65
+    [150, 'CAMARO AMARELO',        44, 66],
     // Sub-section 2b — header row 43, data rows 44-64
     [135, 'CALIFORNIA AMARELA',    44, 65],
     [165, 'CAMARO BRANCO',         44, 65],
