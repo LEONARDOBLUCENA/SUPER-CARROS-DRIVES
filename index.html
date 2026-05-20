@@ -540,92 +540,203 @@ tbody td.td-main { color:var(--text); font-weight:500; }
     <!-- ══ COMISSÕES ══ -->
     <section class="page" id="page-comissoes">
       <div class="page-header">
-        <h1>Comissões</h1>
-        <p>Premissas de valor por carro e resumo de drives por instrutor.</p>
+        <h1>Comiss&#245;es</h1>
+        <p>Quatro tabelas de premissas por carro com comiss&#245;es por instrutor.</p>
       </div>
+      <div class="com-top-filter">
+        <div class="filter-group" style="min-width:110px;flex:none;">
+          <label class="filter-label">Ano</label>
+          <select class="filter-select" id="com-ano" onchange="renderComissoes()"></select>
+        </div>
+        <div class="filter-group" style="min-width:130px;flex:none;">
+          <label class="filter-label">M&#234;s</label>
+          <select class="filter-select" id="com-mes" onchange="renderComissoes()">
+                <option value="all">Todos</option>
+                <option value="01">Janeiro</option><option value="02">Fevereiro</option>
+                <option value="03">Março</option><option value="04">Abril</option>
+                <option value="05">Maio</option><option value="06">Junho</option>
+                <option value="07">Julho</option><option value="08">Agosto</option>
+                <option value="09">Setembro</option><option value="10">Outubro</option>
+                <option value="11">Novembro</option><option value="12">Dezembro</option>
+          </select>
+        </div>
+      </div>
+      <div class="com-tiers">
 
-      <div class="com-layout">
-
-        <!-- LEFT: premissas -->
-        <div style="display:flex;flex-direction:column;gap:16px;">
-          <div class="card">
-            <div class="card-title">Cadastrar Premissa</div>
-            <div style="display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:end;">
-              <div class="field" style="margin-bottom:0">
-                <label>Carro</label>
-                <select class="filter-select" id="com-car-sel" style="width:100%"></select>
-              </div>
-              <div class="field" style="margin-bottom:0">
-                <label>Valor por Drive (R$)</label>
-                <input type="number" id="com-valor" placeholder="0.00" step="0.01" style="width:130px">
-              </div>
-              <button class="btn btn-primary" style="width:auto;padding:8px 18px;align-self:end" onclick="addPremissa()">Salvar</button>
+        <!-- Normal -->
+        <div class="com-tier">
+          <div class="tier-header">
+            <span class="tier-badge normal">NORMAL</span>
+            <span class="tier-title">Tabela Normal</span>
+            <button class="btn-sm" style="margin-left:auto" onclick="exportPremissasExcel('normal')">&#x2B07; Tabela</button>
+          </div>
+          <div class="card" style="padding:0;overflow:hidden;">
+            <div style="max-height:300px;overflow-y:auto;">
+              <table class="com-premissa-table">
+                <thead><tr>
+                  <th>Carro</th>
+                  <th style="text-align:right">R$/Drive</th>
+                  <th style="text-align:center;width:80px">A&#231;&#245;es</th>
+                </tr></thead>
+                <tbody id="premissa-body-normal"></tbody>
+              </table>
+            </div>
+            <div class="com-add-row">
+              <select class="filter-select" id="com-car-normal"></select>
+              <input type="number" id="com-val-normal" class="filter-select" placeholder="R$ 0.00" step="0.01" style="padding:8px 10px">
+              <button class="btn btn-primary" style="width:auto;padding:8px 14px;font-size:12px" onclick="addPremissa('normal')">+ Salvar</button>
             </div>
           </div>
-
           <div class="card" style="padding:0;overflow:hidden;">
-            <div class="table-toolbar" style="padding:12px 16px;">
-              <div class="table-toolbar-title">Premissas cadastradas</div>
-              <button class="btn-sm green" onclick="exportPremissasExcel()">⬇ Excel</button>
+            <div class="table-toolbar" style="padding:10px 14px;">
+              <div class="table-toolbar-title" style="font-size:10px">Comiss&#227;o Normal</div>
+              <button class="btn-sm green" onclick="exportComissoesExcel('normal')">&#x2B07; Excel</button>
             </div>
-            <div style="max-height:420px;overflow-y:auto;">
-              <table class="com-premissa-table">
-                <thead>
-                  <tr>
-                    <th>Carro</th>
-                    <th style="text-align:right">Valor / Drive</th>
-                    <th style="text-align:center">Ações</th>
-                  </tr>
-                </thead>
-                <tbody id="premissa-body"></tbody>
+            <div style="max-height:300px;overflow-y:auto;">
+              <table class="com-inst-table">
+                <thead><tr>
+                  <th>Instrutor</th>
+                  <th style="text-align:right">Drives</th>
+                  <th style="text-align:right">Caronas</th>
+                  <th style="text-align:right">Comiss&#227;o Simples</th>
+                </tr></thead>
+                <tbody id="inst-body-normal"></tbody>
+                <tfoot id="inst-foot-normal"></tfoot>
               </table>
             </div>
           </div>
         </div>
 
-        <!-- RIGHT: instrutores -->
-        <div style="display:flex;flex-direction:column;gap:16px;">
-          <div class="com-filter-bar">
-            <div class="filter-group" style="min-width:110px;flex:none;">
-              <label class="filter-label">Ano</label>
-              <select class="filter-select" id="com-ano" onchange="renderComissoes()"></select>
+
+        <!-- Ouro -->
+        <div class="com-tier">
+          <div class="tier-header">
+            <span class="tier-badge ouro">OURO</span>
+            <span class="tier-title">Tabela Ouro</span>
+            <button class="btn-sm" style="margin-left:auto" onclick="exportPremissasExcel('ouro')">&#x2B07; Tabela</button>
+          </div>
+          <div class="card" style="padding:0;overflow:hidden;">
+            <div style="max-height:300px;overflow-y:auto;">
+              <table class="com-premissa-table">
+                <thead><tr>
+                  <th>Carro</th>
+                  <th style="text-align:right">R$/Drive</th>
+                  <th style="text-align:center;width:80px">A&#231;&#245;es</th>
+                </tr></thead>
+                <tbody id="premissa-body-ouro"></tbody>
+              </table>
             </div>
-            <div class="filter-group" style="min-width:130px;flex:none;">
-              <label class="filter-label">Mês</label>
-              <select class="filter-select" id="com-mes" onchange="renderComissoes()">
-                <option value="all">Todos</option>
-                <option value="01">Janeiro</option>
-                <option value="02">Fevereiro</option>
-                <option value="03">Março</option>
-                <option value="04">Abril</option>
-                <option value="05">Maio</option>
-                <option value="06">Junho</option>
-                <option value="07">Julho</option>
-                <option value="08">Agosto</option>
-                <option value="09">Setembro</option>
-                <option value="10">Outubro</option>
-                <option value="11">Novembro</option>
-                <option value="12">Dezembro</option>
-              </select>
+            <div class="com-add-row">
+              <select class="filter-select" id="com-car-ouro"></select>
+              <input type="number" id="com-val-ouro" class="filter-select" placeholder="R$ 0.00" step="0.01" style="padding:8px 10px">
+              <button class="btn btn-primary" style="width:auto;padding:8px 14px;font-size:12px" onclick="addPremissa('ouro')">+ Salvar</button>
             </div>
           </div>
-
-          <div class="card" style="padding:0;overflow:hidden;flex:1;">
-            <div class="table-toolbar" style="padding:12px 16px;">
-              <div class="table-toolbar-title">Drives por Instrutor</div>
-              <button class="btn-sm green" onclick="exportComissoesExcel()">⬇ Excel</button>
+          <div class="card" style="padding:0;overflow:hidden;">
+            <div class="table-toolbar" style="padding:10px 14px;">
+              <div class="table-toolbar-title" style="font-size:10px">Comiss&#227;o Ouro</div>
+              <button class="btn-sm green" onclick="exportComissoesExcel('ouro')">&#x2B07; Excel</button>
             </div>
-            <div style="max-height:500px;overflow-y:auto;">
+            <div style="max-height:300px;overflow-y:auto;">
               <table class="com-inst-table">
-                <thead>
-                  <tr>
-                    <th>Instrutor</th>
-                    <th style="text-align:right">Drives</th>
-                    <th style="text-align:right">Comissão Est.</th>
-                  </tr>
-                </thead>
-                <tbody id="com-inst-body"></tbody>
-                <tfoot id="com-inst-foot"></tfoot>
+                <thead><tr>
+                  <th>Instrutor</th>
+                  <th style="text-align:right">Drives</th>
+                  <th style="text-align:right">Caronas</th>
+                  <th style="text-align:right">Comiss&#227;o Simples</th>
+                </tr></thead>
+                <tbody id="inst-body-ouro"></tbody>
+                <tfoot id="inst-foot-ouro"></tfoot>
+              </table>
+            </div>
+          </div>
+        </div>
+
+
+        <!-- Prata -->
+        <div class="com-tier">
+          <div class="tier-header">
+            <span class="tier-badge prata">PRATA</span>
+            <span class="tier-title">Tabela Prata</span>
+            <button class="btn-sm" style="margin-left:auto" onclick="exportPremissasExcel('prata')">&#x2B07; Tabela</button>
+          </div>
+          <div class="card" style="padding:0;overflow:hidden;">
+            <div style="max-height:300px;overflow-y:auto;">
+              <table class="com-premissa-table">
+                <thead><tr>
+                  <th>Carro</th>
+                  <th style="text-align:right">R$/Drive</th>
+                  <th style="text-align:center;width:80px">A&#231;&#245;es</th>
+                </tr></thead>
+                <tbody id="premissa-body-prata"></tbody>
+              </table>
+            </div>
+            <div class="com-add-row">
+              <select class="filter-select" id="com-car-prata"></select>
+              <input type="number" id="com-val-prata" class="filter-select" placeholder="R$ 0.00" step="0.01" style="padding:8px 10px">
+              <button class="btn btn-primary" style="width:auto;padding:8px 14px;font-size:12px" onclick="addPremissa('prata')">+ Salvar</button>
+            </div>
+          </div>
+          <div class="card" style="padding:0;overflow:hidden;">
+            <div class="table-toolbar" style="padding:10px 14px;">
+              <div class="table-toolbar-title" style="font-size:10px">Comiss&#227;o Prata</div>
+              <button class="btn-sm green" onclick="exportComissoesExcel('prata')">&#x2B07; Excel</button>
+            </div>
+            <div style="max-height:300px;overflow-y:auto;">
+              <table class="com-inst-table">
+                <thead><tr>
+                  <th>Instrutor</th>
+                  <th style="text-align:right">Drives</th>
+                  <th style="text-align:right">Caronas</th>
+                  <th style="text-align:right">Comiss&#227;o Simples</th>
+                </tr></thead>
+                <tbody id="inst-body-prata"></tbody>
+                <tfoot id="inst-foot-prata"></tfoot>
+              </table>
+            </div>
+          </div>
+        </div>
+
+
+        <!-- Bronze -->
+        <div class="com-tier">
+          <div class="tier-header">
+            <span class="tier-badge bronze">BRONZE</span>
+            <span class="tier-title">Tabela Bronze</span>
+            <button class="btn-sm" style="margin-left:auto" onclick="exportPremissasExcel('bronze')">&#x2B07; Tabela</button>
+          </div>
+          <div class="card" style="padding:0;overflow:hidden;">
+            <div style="max-height:300px;overflow-y:auto;">
+              <table class="com-premissa-table">
+                <thead><tr>
+                  <th>Carro</th>
+                  <th style="text-align:right">R$/Drive</th>
+                  <th style="text-align:center;width:80px">A&#231;&#245;es</th>
+                </tr></thead>
+                <tbody id="premissa-body-bronze"></tbody>
+              </table>
+            </div>
+            <div class="com-add-row">
+              <select class="filter-select" id="com-car-bronze"></select>
+              <input type="number" id="com-val-bronze" class="filter-select" placeholder="R$ 0.00" step="0.01" style="padding:8px 10px">
+              <button class="btn btn-primary" style="width:auto;padding:8px 14px;font-size:12px" onclick="addPremissa('bronze')">+ Salvar</button>
+            </div>
+          </div>
+          <div class="card" style="padding:0;overflow:hidden;">
+            <div class="table-toolbar" style="padding:10px 14px;">
+              <div class="table-toolbar-title" style="font-size:10px">Comiss&#227;o Bronze</div>
+              <button class="btn-sm green" onclick="exportComissoesExcel('bronze')">&#x2B07; Excel</button>
+            </div>
+            <div style="max-height:300px;overflow-y:auto;">
+              <table class="com-inst-table">
+                <thead><tr>
+                  <th>Instrutor</th>
+                  <th style="text-align:right">Drives</th>
+                  <th style="text-align:right">Caronas</th>
+                  <th style="text-align:right">Comiss&#227;o Simples</th>
+                </tr></thead>
+                <tbody id="inst-body-bronze"></tbody>
+                <tfoot id="inst-foot-bronze"></tfoot>
               </table>
             </div>
           </div>
@@ -688,7 +799,7 @@ function restoreJSON(input) {
       if (!confirm(`Restaurar backup de ${payload.exported ? new Date(payload.exported).toLocaleString('pt-BR') : 'data desconhecida'}?\n\nIsso substituirá os dados atuais.`)) return;
       DB  = payload.drives || {};
       GAS = payload.gas    || [];
-      COM = payload.com    || {};
+      COM = payload.com    || {}; TIERS.forEach(t=>{if(!COM[t])COM[t]={};});
       saveDB(DB); saveGas(GAS); saveCom(COM);
       refreshSidebar();
       showToast('Backup restaurado com sucesso');
@@ -774,6 +885,8 @@ function extractRecords(rows) {
     [15,  'FERRARI PORTOFINO',     43, 65],
     [30,  'LAMBORGHINI GALLARDO',  43, 65],
     [45,  'CORVETTE C7',           43, 65],
+    // Col 135: BMW M4 sub-section rows 23-43 (header row 22)
+    [135, 'BMW M4',                23, 43],
     // Col 150: Camaro Amarelo second section continues in block 2 rows 44-65
     [150, 'CAMARO AMARELO',        44, 66],
     // Sub-section 2b — header row 43, data rows 44-64
@@ -1181,16 +1294,18 @@ function showToast(msg,err=false) {
 }
 
 // ══ COMISSÕES ══
-const COM_KEY = 'bi_drives_com_v1';
+const COM_KEY = 'bi_drives_com_v2';
 function loadCom()  { try { return JSON.parse(localStorage.getItem(COM_KEY)||'{}'); } catch { return {}; } }
 function saveCom(c) { localStorage.setItem(COM_KEY, JSON.stringify(c)); }
-let COM = loadCom(); // { 'MUSTANG BLACK': 50.00, ... }
+// COM = { normal:{car:val}, ouro:{car:val}, prata:{car:val}, bronze:{car:val} }
+let COM = loadCom();
+const TIERS = ['normal','ouro','prata','bronze'];
+function getTier(tid) { if (!COM[tid]) COM[tid]={}; return COM[tid]; }
 
-// All known cars list (for the select dropdown)
 const ALL_CARS = [
   'MUSTANG BLACK','MUSTANG WHITE','MUSTANG RED','718','PORSCHE 911 CARRERA',
   'MASERATI GRANCABRIO','CAMARO BORDO','MUSTANG 2025','FERRARI CALIFORNIA',
-  'SHELBY GT-500','CORVETTE C6','BMW M3','FERRARI 360 MODENA','CAMARO AMARELO',
+  'SHELBY GT-500','CORVETTE C6','BMW M3','BMW M4','FERRARI 360 MODENA','CAMARO AMARELO',
   'TOYOTA SUPRA','AUDI RS6','PORSCHE 911 CARRERA S','DODGE CHALLENGER',
   'MUSTANG 5.0','PORSCHE BOXSTER','MUSTANG GT','MCLAREN 600LT',
   'FERRARI PORTOFINO','LAMBORGHINI GALLARDO','CORVETTE C7',
@@ -1198,203 +1313,185 @@ const ALL_CARS = [
 ];
 
 function populateCarSel() {
-  const sel = document.getElementById('com-car-sel'); if (!sel) return;
-  // Sort: cars with premissa first, then rest
-  const withVal  = ALL_CARS.filter(c => COM[c] != null).sort();
-  const withoutVal = ALL_CARS.filter(c => COM[c] == null).sort();
-  sel.innerHTML = [...withVal, ...withoutVal]
-    .map(c => `<option value="${c}">${c}${COM[c]!=null?' ✓':''}</option>`).join('');
+  TIERS.forEach(tid => {
+    const sel = document.getElementById('com-car-'+tid); if (!sel) return;
+    const tier = getTier(tid);
+    sel.innerHTML = ALL_CARS.map(c =>
+      `<option value="${c}">${c}${tier[c]!=null?' ✓':''}</option>`
+    ).join('');
+  });
 }
 
-function addPremissa() {
-  const car = document.getElementById('com-car-sel').value;
-  const val = parseFloat(document.getElementById('com-valor').value);
+function addPremissa(tid) {
+  const car = document.getElementById('com-car-'+tid)?.value;
+  const val = parseFloat(document.getElementById('com-val-'+tid)?.value);
   if (!car || isNaN(val) || val < 0) { showToast('Preencha carro e valor', true); return; }
-  COM[car] = val;
+  getTier(tid)[car] = val;
   saveCom(COM);
-  document.getElementById('com-valor').value = '';
-  renderPremissas();
+  document.getElementById('com-val-'+tid).value = '';
+  renderAllPremissas();
   populateCarSel();
   renderComissoes();
-  showToast(`✓ ${car}: R$ ${val.toFixed(2)}`);
+  showToast(`✓ [${tid.toUpperCase()}] ${car}: R$ ${val.toFixed(2)}`);
 }
 
-function deletePremissa(car) {
-  delete COM[car]; saveCom(COM);
-  renderPremissas(); populateCarSel(); renderComissoes();
-  showToast(`Premissa de ${car} removida`);
+function deletePremissa(tid, car) {
+  delete getTier(tid)[car]; saveCom(COM);
+  renderAllPremissas(); populateCarSel(); renderComissoes();
 }
 
-function startEditPremissa(car) {
-  const row = document.getElementById('prow-' + CSS.escape(car));
-  if (!row) return;
-  const td = row.querySelector('.td-val');
-  const cur = COM[car] || 0;
-  td.innerHTML = `<input class="inline-edit" id="edit-${CSS.escape(car)}" type="number" value="${cur}" step="0.01" onkeydown="if(event.key==='Enter')saveEditPremissa('${car.replace(/'/g,"\'")}'); if(event.key==='Escape')renderPremissas();">`;
-  document.getElementById('edit-' + CSS.escape(car))?.focus();
+function startEditPremissa(tid, car) {
+  const rowEl = document.getElementById('prow-'+tid+'-'+CSS.escape(car)); if (!rowEl) return;
+  const td = rowEl.querySelector('.td-val');
+  const cur = getTier(tid)[car] || 0;
+  const esc = car.replace(/'/g,"\\'");
+  td.innerHTML = `<input class="inline-edit" id="ei-${tid}-${CSS.escape(car)}" type="number" value="${cur}" step="0.01"
+    onkeydown="if(event.key==='Enter')saveEditPremissa('${tid}','${esc}'); if(event.key==='Escape')renderAllPremissas();">`;
+  document.getElementById('ei-'+tid+'-'+CSS.escape(car))?.focus();
 }
 
-function saveEditPremissa(car) {
-  const inp = document.getElementById('edit-' + CSS.escape(car));
-  if (!inp) return;
+function saveEditPremissa(tid, car) {
+  const inp = document.getElementById('ei-'+tid+'-'+CSS.escape(car)); if (!inp) return;
   const val = parseFloat(inp.value);
   if (isNaN(val) || val < 0) { showToast('Valor inválido', true); return; }
-  COM[car] = val; saveCom(COM);
-  renderPremissas(); populateCarSel(); renderComissoes();
-  showToast(`✓ ${car} atualizado`);
+  getTier(tid)[car] = val; saveCom(COM);
+  renderAllPremissas(); populateCarSel(); renderComissoes();
 }
 
-function renderPremissas() {
-  const tbody = document.getElementById('premissa-body'); if (!tbody) return;
-  const entries = ALL_CARS.map(car => [car, COM[car]]);
-  if (!entries.some(([,v]) => v != null)) {
-    tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;padding:24px;color:var(--text3);font-size:12px;">Nenhuma premissa cadastrada ainda.</td></tr>`;
-    return;
-  }
-  tbody.innerHTML = entries.map(([car, val]) => `
-    <tr id="prow-${CSS.escape(car)}">
+function renderPremissaTable(tid) {
+  const tbody = document.getElementById('premissa-body-'+tid); if (!tbody) return;
+  const tier = getTier(tid);
+  tbody.innerHTML = ALL_CARS.map(car => {
+    const val = tier[car];
+    const esc = car.replace(/'/g,"\\'");
+    return `<tr id="prow-${tid}-${CSS.escape(car)}">
       <td class="td-car">${car}</td>
-      <td class="td-val" style="text-align:right">${val != null ? 'R$ '+val.toFixed(2) : '<span style="color:var(--text3);font-size:11px">—</span>'}</td>
+      <td class="td-val" style="text-align:right">${val!=null?'R$ '+val.toFixed(2):'<span style="color:var(--text3)">—</span>'}</td>
       <td style="text-align:center;white-space:nowrap">
-        ${val != null ? `<button class="td-edit" onclick="startEditPremissa('${car.replace(/'/g,"\'")}')">editar</button>
-        <button class="td-del" onclick="deletePremissa('${car.replace(/'/g,"\'")}')">✕</button>` : ''}
+        ${val!=null?`<button class="td-edit" onclick="startEditPremissa('${tid}','${esc}')">editar</button>
+        <button class="td-del" onclick="deletePremissa('${tid}','${esc}')">&#x2715;</button>`:''}
       </td>
-    </tr>`).join('');
+    </tr>`;
+  }).join('');
 }
+function renderAllPremissas() { TIERS.forEach(tid => renderPremissaTable(tid)); }
 
 function getComYears() {
   const years = new Set();
-  Object.keys(DB).forEach(dateKey => {
-    const parts = dateKey.split('/');
-    if (parts.length === 3) years.add(parts[2]);
-  });
+  Object.keys(DB).forEach(k => { const p=k.split('/'); if(p.length===3) years.add(p[2]); });
   return [...years].sort();
 }
 
 function populateComFilters() {
   const anoSel = document.getElementById('com-ano'); if (!anoSel) return;
   const years = getComYears();
-  const curYear = anoSel.value;
+  const cur = anoSel.value;
   anoSel.innerHTML = '<option value="all">Todos</option>' +
-    years.map(y => `<option value="${y}"${y===curYear?' selected':''}>${y}</option>`).join('');
-  if (!curYear && years.length) anoSel.value = years[years.length - 1];
+    years.map(y=>`<option value="${y}"${y===cur?' selected':''}>${y}</option>`).join('');
+  if (!cur && years.length) anoSel.value = years[years.length-1];
 }
 
 function getFilteredComRecords() {
-  const ano = document.getElementById('com-ano')?.value || 'all';
-  const mes = document.getElementById('com-mes')?.value || 'all';
-  let records = [];
-  Object.entries(DB).forEach(([dateKey, recs]) => {
-    const parts = dateKey.split('/'); // DD/MM/YYYY
-    if (parts.length !== 3) return;
-    const [dd, mm, yyyy] = parts;
-    if (ano !== 'all' && yyyy !== ano) return;
-    if (mes !== 'all' && mm !== mes) return;
-    recs.forEach(r => records.push(r));
+  const ano = document.getElementById('com-ano')?.value||'all';
+  const mes = document.getElementById('com-mes')?.value||'all';
+  const out = [];
+  Object.entries(DB).forEach(([dateKey,recs]) => {
+    const p=dateKey.split('/'); if(p.length!==3) return;
+    const [,mm,yyyy]=p;
+    if(ano!=='all' && yyyy!==ano) return;
+    if(mes!=='all' && mm!==mes) return;
+    recs.forEach(r=>out.push(r));
   });
-  return records;
+  return out;
+}
+
+function renderInstTable(tid, allRecs) {
+  const tbody = document.getElementById('inst-body-'+tid);
+  const tfoot = document.getElementById('inst-foot-'+tid);
+  if (!tbody) return;
+  const tier = getTier(tid);
+  if (!allRecs.length) {
+    tbody.innerHTML=`<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--text3);font-size:12px;">Nenhum registro no período.</td></tr>`;
+    tfoot.innerHTML=''; return;
+  }
+  const instMap={};
+  allRecs.forEach(r=>{
+    const inst=r.instrutor||'(sem instrutor)';
+    if(!instMap[inst]) instMap[inst]={drives:0,caronas:0,carMap:{}};
+    if(r.tipo==='Drive'){
+      instMap[inst].drives++;
+      instMap[inst].carMap[r.carro]=(instMap[inst].carMap[r.carro]||0)+1;
+    } else if(r.tipo==='Carona') instMap[inst].caronas++;
+  });
+  function calcCom(carMap,caronas) {
+    return Object.entries(carMap).reduce((s,[car,cnt])=>s+(tier[car]!=null?tier[car]*cnt:0),0)+caronas;
+  }
+  const sorted=Object.entries(instMap)
+    .map(([inst,d])=>({inst,drives:d.drives,caronas:d.caronas,com:calcCom(d.carMap,d.caronas)}))
+    .sort((a,b)=>b.drives-a.drives);
+  const maxD=sorted[0]?.drives||1;
+  const totD=sorted.reduce((s,r)=>s+r.drives,0);
+  const totC=sorted.reduce((s,r)=>s+r.caronas,0);
+  const totV=sorted.reduce((s,r)=>s+r.com,0);
+  const hasCom=sorted.some(r=>r.com>0);
+  tbody.innerHTML=sorted.map(row=>{
+    const bw=Math.round((row.drives/maxD)*50);
+    return `<tr>
+      <td class="td-main">${row.inst}<span class="rank-bar" style="width:${bw}px"></span></td>
+      <td class="td-num">${row.drives}</td>
+      <td class="td-num">${row.caronas}</td>
+      <td class="td-val">${hasCom&&row.com>0?'R$ '+row.com.toFixed(2):'<span style="color:var(--text3)">—</span>'}</td>
+    </tr>`;
+  }).join('');
+  tfoot.innerHTML=`<tr>
+    <td>TOTAL</td>
+    <td class="td-num" style="text-align:right">${totD}</td>
+    <td class="td-num" style="text-align:right">${totC}</td>
+    <td class="tf-val">${hasCom?'R$ '+totV.toFixed(2):'—'}</td>
+  </tr>`;
 }
 
 function renderComissoes() {
   populateComFilters();
-  renderPremissas();
-  const tbody = document.getElementById('com-inst-body');
-  const tfoot = document.getElementById('com-inst-foot');
-  if (!tbody) return;
-
-  const records = getFilteredComRecords().filter(r => r.tipo === 'Drive');
-  if (!records.length) {
-    tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;padding:32px;color:var(--text3);font-size:12px;">Nenhum drive no período selecionado.</td></tr>`;
-    tfoot.innerHTML = '';
-    return;
-  }
-
-  // Count drives per instructor, also track per car for commission calculation
-  const instMap = {};
-  records.forEach(r => {
-    const inst = r.instrutor || '(sem instrutor)';
-    if (!instMap[inst]) instMap[inst] = { drives: 0, carMap: {} };
-    instMap[inst].drives++;
-    const car = r.carro || '';
-    instMap[inst].carMap[car] = (instMap[inst].carMap[car] || 0) + 1;
-  });
-
-  // Calculate estimated commission per instructor
-  function calcComissao(carMap) {
-    let total = 0;
-    Object.entries(carMap).forEach(([car, count]) => {
-      const val = COM[car];
-      if (val != null) total += val * count;
-    });
-    return total;
-  }
-
-  const sorted = Object.entries(instMap)
-    .map(([inst, data]) => ({ inst, drives: data.drives, com: calcComissao(data.carMap) }))
-    .sort((a, b) => b.drives - a.drives);
-
-  const maxDrives = sorted[0]?.drives || 1;
-  const totalDrives = sorted.reduce((s, r) => s + r.drives, 0);
-  const totalCom    = sorted.reduce((s, r) => s + r.com, 0);
-  const hasCom      = sorted.some(r => r.com > 0);
-
-  tbody.innerHTML = sorted.map((row, i) => {
-    const barW = Math.round((row.drives / maxDrives) * 80);
-    return `<tr>
-      <td class="td-main">
-        ${row.inst}
-        <span class="rank-bar" style="width:${barW}px"></span>
-      </td>
-      <td class="td-num">${row.drives}</td>
-      <td class="td-val">${hasCom && row.com > 0 ? 'R$ '+row.com.toFixed(2) : '<span style="color:var(--text3)">—</span>'}</td>
-    </tr>`;
-  }).join('');
-
-  tfoot.innerHTML = `<tr>
-    <td>TOTAL</td>
-    <td class="td-num" style="text-align:right;font-family:var(--mono)">${totalDrives}</td>
-    <td class="tf-val">${hasCom ? 'R$ '+totalCom.toFixed(2) : '—'}</td>
-  </tr>`;
+  renderAllPremissas();
+  const recs = getFilteredComRecords();
+  TIERS.forEach(tid => renderInstTable(tid, recs));
 }
 
-function exportPremissasExcel() {
-  const rows = [['Carro', 'Valor por Drive (R$)'],
-    ...ALL_CARS.filter(c => COM[c] != null).map(c => [c, COM[c]])];
-  if (rows.length === 1) { showToast('Sem premissas para exportar', true); return; }
-  const ws = XLSX.utils.aoa_to_sheet(rows);
-  const wb2 = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb2, ws, 'Premissas');
-  XLSX.writeFile(wb2, 'premissas_comissao.xlsx');
+function exportPremissasExcel(tid) {
+  const tier = getTier(tid);
+  const entries = ALL_CARS.filter(c=>tier[c]!=null).map(c=>[c,tier[c]]);
+  if (!entries.length) { showToast('Sem premissas nesta tabela', true); return; }
+  const ws=XLSX.utils.aoa_to_sheet([['Carro','R$/Drive'],...entries]);
+  const wb2=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb2,ws,'Premissas '+tid);
+  XLSX.writeFile(wb2,'premissas_'+tid+'.xlsx');
   showToast('Exportado com sucesso');
 }
 
-function exportComissoesExcel() {
-  const records = getFilteredComRecords().filter(r => r.tipo === 'Drive');
-  if (!records.length) { showToast('Sem dados no período', true); return; }
-  const instMap = {};
-  records.forEach(r => {
-    const inst = r.instrutor || '(sem instrutor)';
-    if (!instMap[inst]) instMap[inst] = { drives: 0, carMap: {} };
-    instMap[inst].drives++;
-    instMap[inst].carMap[r.carro] = (instMap[inst].carMap[r.carro] || 0) + 1;
+function exportComissoesExcel(tid) {
+  const recs=getFilteredComRecords();
+  if (!recs.length) { showToast('Sem dados no período', true); return; }
+  const tier=getTier(tid);
+  const instMap={};
+  recs.forEach(r=>{
+    const inst=r.instrutor||'(sem instrutor)';
+    if(!instMap[inst]) instMap[inst]={drives:0,caronas:0,carMap:{}};
+    if(r.tipo==='Drive'){instMap[inst].drives++;instMap[inst].carMap[r.carro]=(instMap[inst].carMap[r.carro]||0)+1;}
+    else if(r.tipo==='Carona') instMap[inst].caronas++;
   });
-  function calcCom(carMap) {
-    return Object.entries(carMap).reduce((s,[car,cnt]) => s + (COM[car]||0)*cnt, 0);
-  }
-  const sorted = Object.entries(instMap)
-    .map(([inst,d]) => [inst, d.drives, calcCom(d.carMap)])
-    .sort((a,b) => b[1]-a[1]);
-  const rows = [['Instrutor','Drives','Comissão Est. (R$)'], ...sorted.map(([i,d,c]) => [i,d,c.toFixed(2)])];
-  const ws = XLSX.utils.aoa_to_sheet(rows);
-  const wb2 = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb2, ws, 'Comissões');
-  const ano = document.getElementById('com-ano')?.value || 'all';
-  const mes = document.getElementById('com-mes')?.value || 'all';
-  XLSX.writeFile(wb2, `comissoes_${ano}_${mes}.xlsx`);
+  function calcCom(carMap,caronas){return Object.entries(carMap).reduce((s,[c,n])=>s+(tier[c]||0)*n,0)+caronas;}
+  const sorted=Object.entries(instMap).map(([i,d])=>[i,d.drives,d.caronas,calcCom(d.carMap,d.caronas)]).sort((a,b)=>b[1]-a[1]);
+  const ano=document.getElementById('com-ano')?.value||'all';
+  const mes=document.getElementById('com-mes')?.value||'all';
+  const rows=[['Instrutor','Drives','Caronas','Comissão Simples (R$)'],...sorted.map(([i,d,c,v])=>[i,d,c,v.toFixed(2)])];
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  const wb2=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb2,ws,'Comissão '+tid);
+  XLSX.writeFile(wb2,'comissoes_'+tid+'_'+ano+'_'+mes+'.xlsx');
   showToast('Exportado com sucesso');
 }
 
-// ══ UPDATE switchTab and backupJSON to include COM ══
 
 // INIT
 document.getElementById('imp-date').value = new Date().toISOString().split('T')[0];
