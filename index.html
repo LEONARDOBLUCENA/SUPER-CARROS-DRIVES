@@ -1333,11 +1333,14 @@ function renderDashboard() {
     carMap[r.carro].total++;
     if (r.tipo==='Drive')  { carMap[r.carro].drive++;  drives++; }
     if (r.tipo==='Carona') { carMap[r.carro].carona++; caronas++; }
-    const inst=r.instrutor||'(sem instrutor)';
-    if (!instMap[inst]) instMap[inst]={total:0,drive:0,carona:0};
-    instMap[inst].total++;
-    if (r.tipo==='Drive') instMap[inst].drive++;
-    else if (r.tipo==='Carona') instMap[inst].carona++;
+    // Só conta métricas de instrutor se houver instrutor preenchido
+    if (r.instrutor && r.instrutor.trim()) {
+      const inst = r.instrutor.trim();
+      if (!instMap[inst]) instMap[inst]={total:0,drive:0,carona:0};
+      instMap[inst].total++;
+      if (r.tipo==='Drive') instMap[inst].drive++;
+      else if (r.tipo==='Carona') instMap[inst].carona++;
+    }
     const vend=r.vendedor||'(sem vendedor)';
     vendMap[vend]=(vendMap[vend]||0)+1;
   });
@@ -1645,7 +1648,8 @@ function renderInstTable(tid, allRecs) {
   }
   const instMap={};
   allRecs.forEach(r=>{
-    const inst=r.instrutor||'(sem instrutor)';
+    if(!r.instrutor || !r.instrutor.trim()) return; // ignora sem instrutor
+    const inst=r.instrutor.trim();
     if(!instMap[inst]) instMap[inst]={drives:0,caronas:0,carMap:{}};
     if(r.tipo==='Drive'){
       instMap[inst].drives++;
@@ -1687,7 +1691,8 @@ function renderTop5() {
   const dayInstMap = {}; // { 'DD/MM/YYYY': { 'instrutor': {drives,caronas} } }
   Object.entries(DB).forEach(([dateKey, recs]) => {
     recs.forEach(r => {
-      const inst = r.instrutor || '(sem instrutor)';
+      if(!r.instrutor || !r.instrutor.trim()) return; // ignora sem instrutor
+      const inst = r.instrutor.trim();
       if (!dayInstMap[dateKey]) dayInstMap[dateKey] = {};
       if (!dayInstMap[dateKey][inst]) dayInstMap[dateKey][inst] = {drives:0, caronas:0};
       if (r.tipo === 'Drive')  dayInstMap[dateKey][inst].drives++;
@@ -1768,7 +1773,8 @@ function exportComissoesExcel(tid) {
   const tier=getTier(tid);
   const instMap={};
   recs.forEach(r=>{
-    const inst=r.instrutor||'(sem instrutor)';
+    if(!r.instrutor || !r.instrutor.trim()) return; // ignora sem instrutor
+    const inst=r.instrutor.trim();
     if(!instMap[inst]) instMap[inst]={drives:0,caronas:0,carMap:{}};
     if(r.tipo==='Drive'){instMap[inst].drives++;instMap[inst].carMap[r.carro]=(instMap[inst].carMap[r.carro]||0)+1;}
     else if(r.tipo==='Carona') instMap[inst].caronas++;
