@@ -827,9 +827,9 @@ function saveSyncCfg(cfg) { localStorage.setItem(SYNC_KEY, JSON.stringify(cfg));
 
 // Detect correct auth header based on key prefix
 function authHeaders(apiKey, extra) {
-  const isMaster = apiKey.startsWith('$2b$');
-  const hdr = isMaster ? 'X-Master-Key' : 'X-Access-Key';
-  return { 'Content-Type': 'application/json', [hdr]: apiKey, ...extra };
+  // Send both headers — JSONBin will use whichever applies
+  const key = apiKey.trim();
+  return { 'Content-Type': 'application/json', 'X-Master-Key': key, 'X-Access-Key': key, ...extra };
 }
 
 function setSyncStatus(state, msg) {
