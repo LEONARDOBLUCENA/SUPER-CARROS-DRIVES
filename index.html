@@ -910,7 +910,10 @@ async function createBin(apiKey) {
     headers: authHeaders(apiKey, { 'X-Bin-Name': 'BI Drives', 'X-Bin-Private': 'true' }),
     body: JSON.stringify(getPayload())
   });
-  if (!res.ok) throw new Error('HTTP ' + res.status);
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error('HTTP ' + res.status + ' — ' + body.slice(0,300));
+  }
   const json = await res.json();
   return json.metadata.id;
 }
@@ -945,7 +948,10 @@ async function saveAndTestSync() {
       const res = await fetch(`${JSONBIN_BASE}/b/${finalBinId}/latest`, {
         headers: authHeaders(apiKey)
       });
-      if (!res.ok) throw new Error('Bin não encontrado ou chave inválida (HTTP ' + res.status + ')');
+      if (!res.ok) {
+        const body = await res.text();
+        throw new Error('HTTP ' + res.status + ' — ' + body.slice(0,300));
+      }
       const json = await res.json();
       // If bin has valid data, pull it
       if (json.record && json.record.drives) {
