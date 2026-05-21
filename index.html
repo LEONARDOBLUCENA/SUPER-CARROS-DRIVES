@@ -586,7 +586,17 @@ tbody td.td-main { color:var(--text); font-weight:500; }
                 <option value="11">Novembro</option><option value="12">Dezembro</option>
           </select>
         </div>
+        <div class="filter-group" style="min-width:150px;flex:none;">
+          <label class="filter-label">Dia</label>
+          <select class="filter-select" id="com-dia" onchange="renderComissoes()">
+            <option value="all">Todos</option>
+          </select>
+        </div>
       </div>
+
+      <!-- TOP 5 placeholder — rendered by JS -->
+      <div id="com-top5"></div>
+
       <div class="com-tiers">
 
         <!-- Normal -->
@@ -1586,22 +1596,40 @@ function getComYears() {
 function populateComFilters() {
   const anoSel = document.getElementById('com-ano'); if (!anoSel) return;
   const years = getComYears();
-  const cur = anoSel.value;
+  const curYear = anoSel.value;
   anoSel.innerHTML = '<option value="all">Todos</option>' +
-    years.map(y=>`<option value="${y}"${y===cur?' selected':''}>${y}</option>`).join('');
-  if (!cur && years.length) anoSel.value = years[years.length-1];
+    years.map(y=>`<option value="${y}"${y===curYear?' selected':''}>${y}</option>`).join('');
+  if (!curYear && years.length) anoSel.value = years[years.length-1];
+
+  // Populate dia select based on ano+mes filter
+  const diaSel = document.getElementById('com-dia'); if (!diaSel) return;
+  const ano = anoSel.value;
+  const mes = document.getElementById('com-mes')?.value||'all';
+  const curDia = diaSel.value;
+  const days = Object.keys(DB).filter(k => {
+    const p=k.split('/'); if(p.length!==3) return false;
+    const [,mm,yyyy]=p;
+    if(ano!=='all' && yyyy!==ano) return false;
+    if(mes!=='all' && mm!==mes) return false;
+    return true;
+  }).sort((a,b)=>a.split('/').reverse().join('').localeCompare(b.split('/').reverse().join('')));
+  diaSel.innerHTML = '<option value="all">Todos</option>' +
+    days.map(d=>`<option value="${d}"${d===curDia?' selected':''}>${d}</option>`).join('');
+  if(curDia && days.includes(curDia)) diaSel.value = curDia;
 }
 
 function getFilteredComRecords() {
   const ano = document.getElementById('com-ano')?.value||'all';
   const mes = document.getElementById('com-mes')?.value||'all';
+  const dia = document.getElementById('com-dia')?.value||'all';
   const out = [];
   Object.entries(DB).forEach(([dateKey,recs]) => {
     const p=dateKey.split('/'); if(p.length!==3) return;
-    const [,mm,yyyy]=p;
+    const [dd,mm,yyyy]=p;
     if(ano!=='all' && yyyy!==ano) return;
     if(mes!=='all' && mm!==mes) return;
-    recs.forEach(r=>out.push(r));
+    if(dia!=='all' && dateKey!==dia) return;
+    recs.forEach(r=>out.push({...r, _day: dateKey}));
   });
   return out;
 }
@@ -1653,9 +1681,72 @@ function renderInstTable(tid, allRecs) {
   </tr>`;
 }
 
+function renderTop5() {
+  const el = document.getElementById('com-top5'); if (!el) return;
+  // Always scan ALL days (ignore filters) to find top 5 single-day performances
+  const dayInstMap = {}; // { 'DD/MM/YYYY': { 'instrutor': {drives,caronas} } }
+  Object.entries(DB).forEach(([dateKey, recs]) => {
+    recs.forEach(r => {
+      const inst = r.instrutor || '(sem instrutor)';
+      if (!dayInstMap[dateKey]) dayInstMap[dateKey] = {};
+      if (!dayInstMap[dateKey][inst]) dayInstMap[dateKey][inst] = {drives:0, caronas:0};
+      if (r.tipo === 'Drive')  dayInstMap[dateKey][inst].drives++;
+      else if (r.tipo === 'Carona') dayInstMap[dateKey][inst].caronas++;
+    });
+  });
+
+  // Flatten to list of {day, inst, drives, caronas, total}
+  const entries = [];
+  Object.entries(dayInstMap).forEach(([day, instMap]) => {
+    Object.entries(instMap).forEach(([inst, data]) => {
+      entries.push({ day, inst, drives: data.drives, caronas: data.caronas, total: data.drives + data.caronas });
+    });
+  });
+
+  if (!entries.length) { el.innerHTML=''; return; }
+
+  // Sort by total desc, take top 5
+  const top5 = entries.sort((a,b) => b.total - a.total).slice(0,5);
+  const maxTotal = top5[0].total;
+
+  el.innerHTML = `
+    <div class="card" style="margin-bottom:24px;overflow:hidden;padding:0;">
+      <div class="table-toolbar" style="padding:12px 16px;">
+        <div class="table-toolbar-title">&#127942; Top 5 — Mais Passeios em um &#218;nico Dia</div>
+      </div>
+      <div>
+        <table class="com-inst-table">
+          <thead><tr>
+            <th style="width:40px;text-align:center">#</th>
+            <th>Instrutor</th>
+            <th style="text-align:center">Dia</th>
+            <th style="text-align:right">Drives</th>
+            <th style="text-align:right">Caronas</th>
+            <th style="text-align:right">Total</th>
+          </tr></thead>
+          <tbody>
+            ${top5.map((r,i) => {
+              const medals = ['&#127947;','&#129352;','&#129353;','4','5'];
+              const bw = Math.round((r.total/maxTotal)*120);
+              return `<tr>
+                <td style="text-align:center;font-size:16px">${medals[i]}</td>
+                <td class="td-main">${r.inst}<span class="rank-bar" style="width:${bw}px"></span></td>
+                <td style="text-align:center;font-family:var(--mono);font-size:11px;color:var(--text3)">${r.day}</td>
+                <td class="td-num">${r.drives}</td>
+                <td class="td-num">${r.caronas}</td>
+                <td style="text-align:right;font-family:var(--mono);font-weight:700;color:var(--text)">${r.total}</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
 function renderComissoes() {
   populateComFilters();
   renderAllPremissas();
+  renderTop5();
   const recs = getFilteredComRecords();
   TIERS.forEach(tid => renderInstTable(tid, recs));
 }
