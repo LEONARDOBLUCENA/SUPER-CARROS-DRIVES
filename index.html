@@ -775,22 +775,12 @@ tbody td.td-main { color:var(--text); font-weight:500; }
 </div>
 <!-- SYNC CONFIG MODAL -->
 <div id="sync-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:10000;align-items:center;justify-content:center;">
-  <div style="background:var(--s2);border:1px solid var(--border2);border-radius:14px;padding:28px 32px;width:480px;max-width:90vw;">
-    <div style="font-size:16px;font-weight:600;color:var(--text);margin-bottom:6px;">⚙ Configurar Sincronização</div>
-    <div style="font-size:12px;color:var(--text3);margin-bottom:20px;">Conecte ao JSONBin.io para sincronizar dados entre dispositivos.</div>
-
-    <div class="field">
-      <label>API Key do JSONBin</label>
-      <input type="password" id="cfg-apikey" placeholder="$2b$..." style="font-family:var(--mono);font-size:12px;">
-    </div>
-    <div class="field">
-      <label>Bin ID <span style="color:var(--text3);font-weight:400">(deixe vazio para criar automaticamente)</span></label>
-      <input type="text" id="cfg-binid" placeholder="Será preenchido automaticamente" style="font-family:var(--mono);font-size:12px;">
-    </div>
-
-    <div style="display:flex;gap:10px;margin-top:8px;">
-      <button class="btn btn-primary" style="flex:1" onclick="saveAndTestSync()">Conectar e Testar</button>
-      <button class="btn" style="flex:none;width:auto;background:transparent;border:1px solid var(--border2);color:var(--text2)" onclick="closeSyncConfig()">Cancelar</button>
+  <div style="background:var(--s2);border:1px solid var(--border2);border-radius:14px;padding:28px 32px;width:420px;max-width:90vw;">
+    <div style="font-size:16px;font-weight:600;color:var(--text);margin-bottom:6px;">⚙ Sincronização</div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:20px;">Conectado ao <strong style="color:var(--text)">Supabase</strong>. Clique em Testar para verificar a conexão e sincronizar os dados.</div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-primary" style="flex:1" onclick="saveAndTestSync()">Testar e Sincronizar</button>
+      <button class="btn" style="flex:none;width:auto;background:transparent;border:1px solid var(--border2);color:var(--text2)" onclick="closeSyncConfig()">Fechar</button>
     </div>
     <div id="cfg-msg" style="margin-top:12px;font-size:11px;font-family:var(--mono);min-height:18px;"></div>
   </div>
@@ -816,21 +806,16 @@ let activeInst = 'all';
 let pendingFile = null;
 let charts = {};
 
-// ══ JSONBIN SYNC ══
-const JSONBIN_BASE = 'https://api.jsonbin.io/v3';
+// ══ SUPABASE SYNC ══
+const SUPABASE_URL = 'https://snazqitdarwljxdynxne.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_lBb3wlAa7hw6Vb_W8B_t8g_rjJaZ6Qq';
+const SUPABASE_TABLE = 'bi_drives';
 let _pushTimer = null;
 
 function getSyncCfg() {
   try { return JSON.parse(localStorage.getItem(SYNC_KEY)||'{}'); } catch { return {}; }
 }
 function saveSyncCfg(cfg) { localStorage.setItem(SYNC_KEY, JSON.stringify(cfg)); }
-
-// Detect correct auth header based on key prefix
-function authHeaders(apiKey, extra) {
-  // Send both headers — JSONBin will use whichever applies
-  const key = apiKey.trim();
-  return { 'Content-Type': 'application/json', 'X-Master-Key': key, 'X-Access-Key': key, ...extra };
-}
 
 function setSyncStatus(state, msg) {
   const dot = document.getElementById('sync-dot');
@@ -856,25 +841,39 @@ function applyPayload(p) {
   saveCom(COM);
 }
 
-// Push data to JSONBin (debounced 2s)
+function sbHeaders() {
+  return {
+    'Content-Type': 'application/json',
+    'apikey': SUPABASE_KEY,
+    'Authorization': 'Bearer ' + SUPABASE_KEY,
+    'Prefer': 'return=minimal'
+  };
+}
+
+// Push to Supabase (debounced 2s)
 function schedulePush() {
-  const cfg = getSyncCfg();
-  if (!cfg.apiKey || !cfg.binId) return;
   clearTimeout(_pushTimer);
   _pushTimer = setTimeout(() => pushToCloud(), 2000);
 }
 
 async function pushToCloud() {
-  const cfg = getSyncCfg();
-  if (!cfg.apiKey || !cfg.binId) return;
   setSyncStatus('loading', 'Salvando...');
   try {
-    const res = await fetch(`${JSONBIN_BASE}/b/${cfg.binId}`, {
-      method: 'PUT',
-      headers: authHeaders(cfg.apiKey),
-      body: JSON.stringify(getPayload())
+    const payload = getPayload();
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}?id=eq.main`, {
+      method: 'PATCH',
+      headers: sbHeaders(),
+      body: JSON.stringify({
+        drives: payload.drives,
+        gas: payload.gas,
+        com: payload.com,
+        updated_at: new Date().toISOString()
+      })
     });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
+    if (!res.ok) {
+      const body = await res.text();
+      throw new Error('HTTP ' + res.status + ' — ' + body.slice(0,200));
+    }
     setSyncStatus('ok', 'Sincronizado · ' + new Date().toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'}));
   } catch(e) {
     setSyncStatus('err', 'Erro ao salvar');
@@ -883,46 +882,30 @@ async function pushToCloud() {
 }
 
 async function pullFromCloud() {
-  const cfg = getSyncCfg();
-  if (!cfg.apiKey || !cfg.binId) return false;
   setSyncStatus('loading', 'Carregando...');
   try {
-    const res = await fetch(`${JSONBIN_BASE}/b/${cfg.binId}/latest`, {
-      headers: authHeaders(cfg.apiKey)
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}?id=eq.main&select=drives,gas,com`, {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
     });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const json = await res.json();
-    const payload = json.record;
-    if (!payload || !payload.drives) throw new Error('Dados inválidos');
-    applyPayload(payload);
+    if (!res.ok) {
+      const body = await res.text();
+      throw new Error('HTTP ' + res.status + ' — ' + body.slice(0,200));
+    }
+    const rows = await res.json();
+    if (!rows.length) throw new Error('Sem dados no banco');
+    const row = rows[0];
+    applyPayload({ drives: row.drives||{}, gas: row.gas||[], com: row.com||{} });
     setSyncStatus('ok', 'Atualizado · ' + new Date().toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'}));
     return true;
   } catch(e) {
-    setSyncStatus('err', 'Erro ao carregar');
+    setSyncStatus('err', 'Erro: ' + e.message);
     console.error('Pull error:', e);
     return false;
   }
 }
 
-async function createBin(apiKey) {
-  const res = await fetch(`${JSONBIN_BASE}/b`, {
-    method: 'POST',
-    headers: authHeaders(apiKey, { 'X-Bin-Name': 'BI Drives', 'X-Bin-Private': 'true' }),
-    body: JSON.stringify(getPayload())
-  });
-  if (!res.ok) {
-    const body = await res.text();
-    throw new Error('HTTP ' + res.status + ' — ' + body.slice(0,300));
-  }
-  const json = await res.json();
-  return json.metadata.id;
-}
-
-// Config modal
+// Config modal — Supabase is hardcoded, modal just tests connection
 function openSyncConfig() {
-  const cfg = getSyncCfg();
-  document.getElementById('cfg-apikey').value = cfg.apiKey || '';
-  document.getElementById('cfg-binid').value  = cfg.binId  || '';
   document.getElementById('cfg-msg').textContent = '';
   document.getElementById('sync-modal').style.display = 'flex';
 }
@@ -931,40 +914,45 @@ function closeSyncConfig() {
 }
 
 async function saveAndTestSync() {
-  const apiKey = document.getElementById('cfg-apikey').value.trim();
-  const binId  = document.getElementById('cfg-binid').value.trim();
-  const msgEl  = document.getElementById('cfg-msg');
-  if (!apiKey) { msgEl.style.color='var(--red)'; msgEl.textContent='API Key obrigatória.'; return; }
+  const msgEl = document.getElementById('cfg-msg');
   msgEl.style.color='var(--text3)'; msgEl.textContent='Testando conexão...';
-
   try {
-    let finalBinId = binId;
-    if (!finalBinId) {
-      msgEl.textContent = 'Criando bin...';
-      finalBinId = await createBin(apiKey);
-      msgEl.textContent = 'Bin criado: ' + finalBinId;
-    } else {
-      // Test read
-      const res = await fetch(`${JSONBIN_BASE}/b/${finalBinId}/latest`, {
-        headers: authHeaders(apiKey)
-      });
-      if (!res.ok) {
-        const body = await res.text();
-        throw new Error('HTTP ' + res.status + ' — ' + body.slice(0,300));
-      }
-      const json = await res.json();
-      // If bin has valid data, pull it
-      if (json.record && json.record.drives) {
-        if (confirm('Bin encontrado com dados existentes. Carregar esses dados agora?')) {
-          applyPayload(json.record);
-          refreshAll();
-        }
-      }
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}?id=eq.main&select=id`, {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+    });
+    if (!res.ok) {
+      const body = await res.text();
+      throw new Error('HTTP ' + res.status + ' — ' + body.slice(0,200));
     }
-    saveSyncCfg({ apiKey, binId: finalBinId });
-    document.getElementById('cfg-binid').value = finalBinId;
+    const rows = await res.json();
+    if (!rows.length) throw new Error('Tabela vazia — execute o SQL de configuração');
+    // Check if cloud has data
+    const dataRes = await fetch(`${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}?id=eq.main&select=drives,gas,com`, {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+    });
+    const dataRows = await dataRes.json();
+    const cloudRow = dataRows[0];
+    const hasCloudData = cloudRow && cloudRow.drives && Object.keys(cloudRow.drives).length > 0;
+    const hasLocalData = Object.keys(DB).length > 0;
+
+    if (hasCloudData && hasLocalData) {
+      const choice = confirm('Nuvem e local têm dados.\n\nOK = usar dados da NUVEM\nCancelar = enviar dados LOCAIS para a nuvem');
+      if (choice) {
+        applyPayload({ drives: cloudRow.drives||{}, gas: cloudRow.gas||[], com: cloudRow.com||{} });
+        refreshAll();
+      } else {
+        await pushToCloud();
+      }
+    } else if (hasCloudData) {
+      applyPayload({ drives: cloudRow.drives||{}, gas: cloudRow.gas||[], com: cloudRow.com||{} });
+      refreshAll();
+    } else if (hasLocalData) {
+      await pushToCloud();
+    }
+
+    saveSyncCfg({ connected: true });
     msgEl.style.color='var(--green)';
-    msgEl.textContent = '✓ Conectado! Bin ID: ' + finalBinId;
+    msgEl.textContent = '✓ Conectado ao Supabase!';
     setSyncStatus('ok', 'Conectado');
     setTimeout(() => closeSyncConfig(), 1500);
   } catch(e) {
@@ -1719,18 +1707,12 @@ document.getElementById('sync-modal').addEventListener('click', e => {
 
 // Load from cloud on startup, fall back to local
 (async () => {
-  const cfg = getSyncCfg();
-  if (cfg.apiKey && cfg.binId) {
-    setSyncStatus('loading', 'Sincronizando...');
-    const ok = await pullFromCloud();
-    if (ok) {
-      refreshAll();
-    } else {
-      refreshSidebar();
-      renderGas();
-    }
+  setSyncStatus('loading', 'Sincronizando...');
+  const ok = await pullFromCloud();
+  if (ok) {
+    refreshAll();
   } else {
-    setSyncStatus('off', 'Não configurado');
+    setSyncStatus('off', 'Sem conexão — usando dados locais');
     refreshSidebar();
     renderGas();
   }
