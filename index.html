@@ -411,6 +411,7 @@ tbody td.td-main { color:var(--text); font-weight:500; }
     </nav>
     <div class="sidebar-footer">
       <div class="sidebar-footer-stats" id="sidebar-stats">0 registros · 0 dias</div>
+      <div id="sidebar-lastday" style="font-size:10px;font-family:var(--mono);color:var(--yellow);margin-bottom:4px;"></div>
       <div id="sync-status" style="font-size:10px;font-family:var(--mono);margin-bottom:8px;display:flex;align-items:center;gap:6px;">
         <span id="sync-dot" style="width:6px;height:6px;border-radius:50%;background:var(--text3);display:inline-block;flex-shrink:0"></span>
         <span id="sync-msg" style="color:var(--text3)">Não configurado</span>
@@ -1157,7 +1158,10 @@ function refreshSidebar() {
   const days  = sortedDays();
   const total = Object.values(DB).flat().length;
   document.getElementById('days-badge').textContent = days.length;
+  const lastDay = days.length ? days[days.length-1] : null;
   document.getElementById('sidebar-stats').textContent = `${total} reg · ${days.length} dias`;
+  const lastDayEl = document.getElementById('sidebar-lastday');
+  if (lastDayEl) lastDayEl.textContent = lastDay ? `Último dia: ${lastDay}` : '';
   const list = document.getElementById('days-list');
   if (!list) return;
   if (!days.length) { list.innerHTML = '<div class="empty-days">Nenhum dia importado.</div>'; return; }
@@ -1711,7 +1715,7 @@ function renderTop5() {
   if (!entries.length) { el.innerHTML=''; return; }
 
   // Sort by total desc, take top 5
-  const top5 = entries.sort((a,b) => b.total - a.total).slice(0,5);
+  const top5 = entries.sort((a,b) => b.total - a.total || b.drives - a.drives).slice(0,5);
   const maxTotal = top5[0].total;
 
   el.innerHTML = `
