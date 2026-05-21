@@ -377,6 +377,107 @@ tbody td.td-main { color:var(--text); font-weight:500; }
 .toast.show { transform:translateY(0); opacity:1; }
 .toast.ok  { background:var(--green); color:#031a0e; }
 .toast.err { background:var(--red);   color:white; }
+
+/* ── MOBILE ── */
+@media (max-width: 768px) {
+
+  html, body { overflow: auto; height: auto; }
+
+  .layout { flex-direction: column; height: auto; min-height: 100vh; }
+
+  /* Sidebar becomes bottom nav on mobile */
+  .sidebar {
+    width: 100%; height: auto; flex-shrink: 0;
+    border-right: none; border-bottom: 1px solid var(--border);
+    flex-direction: row; align-items: center;
+    position: sticky; top: 0; z-index: 50;
+    padding: 0 12px;
+  }
+  .sidebar-logo { padding: 10px 8px; border-bottom: none; border-right: 1px solid var(--border); margin-right: 8px; }
+  .sidebar-logo .sub-title { display: none; }
+  .wordmark { font-size: 13px; }
+  .nav { flex-direction: row; padding: 4px 0; flex: 1; gap: 2px; overflow-x: auto; }
+  .nav-section { display: none; }
+  .nav-item { padding: 8px 10px; border-radius: 8px; flex-direction: column; gap: 2px; min-width: 56px; align-items: center; }
+  .nav-label { font-size: 9px; text-align: center; }
+  .nav-icon { font-size: 16px; width: auto; }
+  .nav-badge { font-size: 9px; padding: 0px 5px; }
+  .sidebar-footer { display: none; }
+
+  /* Content area */
+  .content-area { overflow-y: auto; overflow-x: hidden; flex: 1; }
+
+  /* Pages */
+  .page { padding: 16px; }
+  .page-header h1 { font-size: 18px; }
+  .page-header p { font-size: 12px; }
+  .page-header { margin-bottom: 16px; }
+
+  /* Import grid */
+  .import-grid { grid-template-columns: 1fr; gap: 12px; }
+
+  /* Gas grid */
+  .gas-grid { grid-template-columns: 1fr; gap: 12px; }
+
+  /* Dashboard filters */
+  .filter-bar { padding: 10px 12px; gap: 8px; margin-bottom: 14px; }
+  .filter-group { min-width: 120px; }
+  .filter-select { font-size: 11px; padding: 7px 28px 7px 8px; }
+
+  /* KPI grid */
+  .kpi-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
+  .kpi { padding: 12px 10px; }
+  .kpi-val { font-size: 26px; }
+  .kpi-label { font-size: 9px; }
+  .kpi-meta { font-size: 10px; }
+
+  /* Charts */
+  .charts-row { grid-template-columns: 1fr; gap: 12px; margin-bottom: 12px; }
+  .charts-row2 { grid-template-columns: 1fr; gap: 12px; margin-bottom: 14px; }
+  .chart-card { padding: 14px; }
+  canvas { max-height: 200px; }
+
+  /* Tables */
+  .table-toolbar { padding: 10px 12px; }
+  .table-search { width: 130px; font-size: 11px; }
+  thead th { padding: 7px 10px; font-size: 9px; }
+  tbody td { padding: 7px 10px; font-size: 11px; }
+
+  /* Commissions */
+  .com-top-filter { padding: 10px 12px; gap: 8px; margin-bottom: 14px; }
+  .com-tier { grid-template-columns: 1fr; gap: 12px; }
+  .tier-header { padding-bottom: 10px; margin-bottom: 2px; }
+  .com-tiers { gap: 20px; }
+  .com-add-row { grid-template-columns: 1fr 90px auto; gap: 6px; }
+
+  /* Cards */
+  .card { padding: 14px; }
+  .card-title { margin-bottom: 12px; }
+
+  /* Days list */
+  .days-list { max-height: 220px; }
+
+  /* Buttons */
+  .btn { padding: 10px 16px; font-size: 13px; }
+  .btn-sm { padding: 6px 10px; font-size: 11px; }
+
+  /* Upload drop */
+  .upload-drop { padding: 20px 16px; }
+  .ud-icon { font-size: 24px; }
+
+  /* Gas */
+  .gas-total-bar { gap: 14px; padding: 10px 12px; }
+  .gas-total-val { font-size: 15px; }
+
+  /* Top 5 table */
+  .com-inst-table td, .com-inst-table th { padding: 6px 8px; font-size: 11px; }
+}
+
+@media (max-width: 400px) {
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  .nav-item { min-width: 46px; padding: 6px 6px; }
+  .nav-label { font-size: 8px; }
+}
 </style>
 </head>
 <body>
@@ -384,9 +485,20 @@ tbody td.td-main { color:var(--text); font-weight:500; }
 
   <!-- SIDEBAR -->
   <aside class="sidebar">
-    <div class="sidebar-logo">
+    <div class="sidebar-logo" onclick="toggleMobileMenu()" style="cursor:pointer;">
       <div class="wordmark">BI<em>.</em>DRIVES</div>
       <div class="sub-title">Operations</div>
+    </div>
+    <!-- Mobile menu (backup/sync) -->
+    <div id="mobile-menu" style="display:none;position:fixed;top:56px;left:0;right:0;background:var(--s1);border-bottom:1px solid var(--border);padding:12px 16px;z-index:100;flex-direction:column;gap:8px;">
+      <div style="font-size:10px;font-family:var(--mono);color:var(--text3);" id="mobile-stats">0 registros</div>
+      <div id="mobile-lastday" style="font-size:10px;font-family:var(--mono);color:var(--yellow);"></div>
+      <div id="mobile-sync" style="font-size:10px;font-family:var(--mono);color:var(--text3);"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn-sm" onclick="backupJSON();toggleMobileMenu()">⬇ Backup</button>
+        <button class="btn-sm" onclick="document.getElementById('restore-inp').click();toggleMobileMenu()">↑ Restaurar</button>
+        <button class="btn-sm" onclick="openSyncConfig();toggleMobileMenu()">⚙ Sync</button>
+      </div>
     </div>
     <nav class="nav">
       <div class="nav-section">Dados</div>
@@ -836,6 +948,9 @@ function setSyncStatus(state, msg) {
   dot.style.background = colors[state] || colors.off;
   txt.textContent = msg;
   txt.style.color = state === 'ok' ? 'var(--green)' : state === 'err' ? 'var(--red)' : 'var(--text3)';
+  const mSync = document.getElementById('mobile-sync');
+  if (mSync) { mSync.textContent = (state === 'ok' ? '● ' : state === 'err' ? '● ' : '○ ') + msg;
+    mSync.style.color = colors[state] || colors.off; }
 }
 
 function getPayload() {
@@ -982,6 +1097,8 @@ function refreshAll() {
 
 // ══ TABS ══
 function switchTab(tab) {
+  const mm = document.getElementById('mobile-menu');
+  if (mm) mm.style.display = 'none';
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-'+tab).classList.add('active');
@@ -1162,6 +1279,11 @@ function refreshSidebar() {
   document.getElementById('sidebar-stats').textContent = `${total} reg · ${days.length} dias`;
   const lastDayEl = document.getElementById('sidebar-lastday');
   if (lastDayEl) lastDayEl.textContent = lastDay ? `Último dia: ${lastDay}` : '';
+  // Update mobile menu stats
+  const mStats = document.getElementById('mobile-stats');
+  if (mStats) mStats.textContent = `${total} reg · ${days.length} dias`;
+  const mLast = document.getElementById('mobile-lastday');
+  if (mLast) mLast.textContent = lastDay ? `Último dia: ${lastDay}` : '';
   const list = document.getElementById('days-list');
   if (!list) return;
   if (!days.length) { list.innerHTML = '<div class="empty-days">Nenhum dia importado.</div>'; return; }
@@ -1796,6 +1918,16 @@ function exportComissoesExcel(tid) {
   showToast('Exportado com sucesso');
 }
 
+
+// MOBILE MENU
+function toggleMobileMenu() {
+  const m = document.getElementById('mobile-menu');
+  if (!m) return;
+  const isOpen = m.style.display === 'flex';
+  m.style.display = isOpen ? 'none' : 'flex';
+}
+// Close mobile menu when switching tabs
+const _origSwitchTab = switchTab;
 
 // INIT
 document.getElementById('imp-date').value = new Date().toISOString().split('T')[0];
