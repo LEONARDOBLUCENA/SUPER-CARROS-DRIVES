@@ -411,10 +411,17 @@ tbody td.td-main { color:var(--text); font-weight:500; }
     </nav>
     <div class="sidebar-footer">
       <div class="sidebar-footer-stats" id="sidebar-stats">0 registros · 0 dias</div>
+      <div id="sync-status" style="font-size:10px;font-family:var(--mono);margin-bottom:8px;display:flex;align-items:center;gap:6px;">
+        <span id="sync-dot" style="width:6px;height:6px;border-radius:50%;background:var(--text3);display:inline-block;flex-shrink:0"></span>
+        <span id="sync-msg" style="color:var(--text3)">Não configurado</span>
+      </div>
       <div class="sidebar-actions">
         <button class="sidebar-btn green" onclick="backupJSON()" title="Exportar backup JSON">⬇ Backup</button>
         <button class="sidebar-btn blue" onclick="document.getElementById('restore-inp').click()" title="Restaurar backup JSON">↑ Restaurar</button>
         <input type="file" id="restore-inp" accept=".json" onchange="restoreJSON(this)">
+      </div>
+      <div style="margin-top:8px;">
+        <button class="sidebar-btn" style="width:100%;color:var(--text3)" onclick="openSyncConfig()">⚙ Sincronização</button>
       </div>
     </div>
   </aside>
@@ -766,16 +773,40 @@ tbody td.td-main { color:var(--text); font-weight:500; }
 
   </main>
 </div>
+<!-- SYNC CONFIG MODAL -->
+<div id="sync-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:10000;align-items:center;justify-content:center;">
+  <div style="background:var(--s2);border:1px solid var(--border2);border-radius:14px;padding:28px 32px;width:480px;max-width:90vw;">
+    <div style="font-size:16px;font-weight:600;color:var(--text);margin-bottom:6px;">⚙ Configurar Sincronização</div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:20px;">Conecte ao JSONBin.io para sincronizar dados entre dispositivos.</div>
+
+    <div class="field">
+      <label>API Key do JSONBin</label>
+      <input type="password" id="cfg-apikey" placeholder="$2b$..." style="font-family:var(--mono);font-size:12px;">
+    </div>
+    <div class="field">
+      <label>Bin ID <span style="color:var(--text3);font-weight:400">(deixe vazio para criar automaticamente)</span></label>
+      <input type="text" id="cfg-binid" placeholder="Será preenchido automaticamente" style="font-family:var(--mono);font-size:12px;">
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:8px;">
+      <button class="btn btn-primary" style="flex:1" onclick="saveAndTestSync()">Conectar e Testar</button>
+      <button class="btn" style="flex:none;width:auto;background:transparent;border:1px solid var(--border2);color:var(--text2)" onclick="closeSyncConfig()">Cancelar</button>
+    </div>
+    <div id="cfg-msg" style="margin-top:12px;font-size:11px;font-family:var(--mono);min-height:18px;"></div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
-// ══ STORAGE ══
+// ══ STORAGE LOCAL ══
 const KEY     = 'bi_drives_v4';
 const GAS_KEY = 'bi_drives_gas_v1';
+const SYNC_KEY = 'bi_drives_sync_cfg';
 function loadDB()  { try { return JSON.parse(localStorage.getItem(KEY)||'{}');     } catch { return {}; } }
 function loadGas() { try { return JSON.parse(localStorage.getItem(GAS_KEY)||'[]'); } catch { return []; } }
-function saveDB(d)  { localStorage.setItem(KEY,     JSON.stringify(d)); }
-function saveGas(g) { localStorage.setItem(GAS_KEY, JSON.stringify(g)); }
+function saveDB(d)  { localStorage.setItem(KEY,     JSON.stringify(d)); schedulePush(); }
+function saveGas(g) { localStorage.setItem(GAS_KEY, JSON.stringify(g)); schedulePush(); }
 
 let DB  = loadDB();
 let GAS = loadGas();
@@ -784,6 +815,158 @@ let activeCar  = 'all';
 let activeInst = 'all';
 let pendingFile = null;
 let charts = {};
+
+// ══ JSONBIN SYNC ══
+const JSONBIN_BASE = 'https://api.jsonbin.io/v3';
+let _pushTimer = null;
+
+function getSyncCfg() {
+  try { return JSON.parse(localStorage.getItem(SYNC_KEY)||'{}'); } catch { return {}; }
+}
+function saveSyncCfg(cfg) { localStorage.setItem(SYNC_KEY, JSON.stringify(cfg)); }
+
+function setSyncStatus(state, msg) {
+  const dot = document.getElementById('sync-dot');
+  const txt = document.getElementById('sync-msg');
+  if (!dot || !txt) return;
+  const colors = { ok: 'var(--green)', err: 'var(--red)', loading: 'var(--yellow)', off: 'var(--text3)' };
+  dot.style.background = colors[state] || colors.off;
+  txt.textContent = msg;
+  txt.style.color = state === 'ok' ? 'var(--green)' : state === 'err' ? 'var(--red)' : 'var(--text3)';
+}
+
+function getPayload() {
+  return { drives: DB, gas: GAS, com: COM, exported: new Date().toISOString() };
+}
+
+function applyPayload(p) {
+  DB  = p.drives || {};
+  GAS = p.gas    || [];
+  COM = p.com    || {};
+  TIERS.forEach(t => { if (!COM[t]) COM[t]={}; });
+  localStorage.setItem(KEY,     JSON.stringify(DB));
+  localStorage.setItem(GAS_KEY, JSON.stringify(GAS));
+  saveCom(COM);
+}
+
+// Push data to JSONBin (debounced 2s)
+function schedulePush() {
+  const cfg = getSyncCfg();
+  if (!cfg.apiKey || !cfg.binId) return;
+  clearTimeout(_pushTimer);
+  _pushTimer = setTimeout(() => pushToCloud(), 2000);
+}
+
+async function pushToCloud() {
+  const cfg = getSyncCfg();
+  if (!cfg.apiKey || !cfg.binId) return;
+  setSyncStatus('loading', 'Salvando...');
+  try {
+    const res = await fetch(`${JSONBIN_BASE}/b/${cfg.binId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'X-Master-Key': cfg.apiKey },
+      body: JSON.stringify(getPayload())
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    setSyncStatus('ok', 'Sincronizado · ' + new Date().toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'}));
+  } catch(e) {
+    setSyncStatus('err', 'Erro ao salvar');
+    console.error('Push error:', e);
+  }
+}
+
+async function pullFromCloud() {
+  const cfg = getSyncCfg();
+  if (!cfg.apiKey || !cfg.binId) return false;
+  setSyncStatus('loading', 'Carregando...');
+  try {
+    const res = await fetch(`${JSONBIN_BASE}/b/${cfg.binId}/latest`, {
+      headers: { 'X-Master-Key': cfg.apiKey }
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const json = await res.json();
+    const payload = json.record;
+    if (!payload || !payload.drives) throw new Error('Dados inválidos');
+    applyPayload(payload);
+    setSyncStatus('ok', 'Atualizado · ' + new Date().toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'}));
+    return true;
+  } catch(e) {
+    setSyncStatus('err', 'Erro ao carregar');
+    console.error('Pull error:', e);
+    return false;
+  }
+}
+
+async function createBin(apiKey) {
+  const res = await fetch(`${JSONBIN_BASE}/b`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Master-Key': apiKey, 'X-Bin-Name': 'BI Drives', 'X-Bin-Private': 'true' },
+    body: JSON.stringify(getPayload())
+  });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  const json = await res.json();
+  return json.metadata.id;
+}
+
+// Config modal
+function openSyncConfig() {
+  const cfg = getSyncCfg();
+  document.getElementById('cfg-apikey').value = cfg.apiKey || '';
+  document.getElementById('cfg-binid').value  = cfg.binId  || '';
+  document.getElementById('cfg-msg').textContent = '';
+  document.getElementById('sync-modal').style.display = 'flex';
+}
+function closeSyncConfig() {
+  document.getElementById('sync-modal').style.display = 'none';
+}
+
+async function saveAndTestSync() {
+  const apiKey = document.getElementById('cfg-apikey').value.trim();
+  const binId  = document.getElementById('cfg-binid').value.trim();
+  const msgEl  = document.getElementById('cfg-msg');
+  if (!apiKey) { msgEl.style.color='var(--red)'; msgEl.textContent='API Key obrigatória.'; return; }
+  msgEl.style.color='var(--text3)'; msgEl.textContent='Testando conexão...';
+
+  try {
+    let finalBinId = binId;
+    if (!finalBinId) {
+      msgEl.textContent = 'Criando bin...';
+      finalBinId = await createBin(apiKey);
+      msgEl.textContent = 'Bin criado: ' + finalBinId;
+    } else {
+      // Test read
+      const res = await fetch(`${JSONBIN_BASE}/b/${finalBinId}/latest`, {
+        headers: { 'X-Master-Key': apiKey }
+      });
+      if (!res.ok) throw new Error('Bin não encontrado ou chave inválida (HTTP ' + res.status + ')');
+      const json = await res.json();
+      // If bin has valid data, pull it
+      if (json.record && json.record.drives) {
+        if (confirm('Bin encontrado com dados existentes. Carregar esses dados agora?')) {
+          applyPayload(json.record);
+          refreshAll();
+        }
+      }
+    }
+    saveSyncCfg({ apiKey, binId: finalBinId });
+    document.getElementById('cfg-binid').value = finalBinId;
+    msgEl.style.color='var(--green)';
+    msgEl.textContent = '✓ Conectado! Bin ID: ' + finalBinId;
+    setSyncStatus('ok', 'Conectado');
+    setTimeout(() => closeSyncConfig(), 1500);
+  } catch(e) {
+    msgEl.style.color='var(--red)';
+    msgEl.textContent = 'Erro: ' + e.message;
+  }
+}
+
+function refreshAll() {
+  refreshSidebar();
+  const active = document.querySelector('.nav-item.active')?.id?.replace('nav-','');
+  if (active === 'dashboard') renderDashboard();
+  else if (active === 'gas') renderGas();
+  else if (active === 'comissoes') { populateCarSel(); renderComissoes(); }
+}
 
 // ══ TABS ══
 function switchTab(tab) {
@@ -799,7 +982,7 @@ function switchTab(tab) {
 
 // ══ BACKUP / RESTORE ══
 function backupJSON() {
-  const payload = { drives: DB, gas: GAS, com: COM, exported: new Date().toISOString() };
+  const payload = getPayload();
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
@@ -816,10 +999,8 @@ function restoreJSON(input) {
       const payload = JSON.parse(e.target.result);
       if (!payload.drives) throw new Error('Formato inválido');
       if (!confirm(`Restaurar backup de ${payload.exported ? new Date(payload.exported).toLocaleString('pt-BR') : 'data desconhecida'}?\n\nIsso substituirá os dados atuais.`)) return;
-      DB  = payload.drives || {};
-      GAS = payload.gas    || [];
-      COM = payload.com    || {}; TIERS.forEach(t=>{if(!COM[t])COM[t]={};});
-      saveDB(DB); saveGas(GAS); saveCom(COM);
+      applyPayload(payload);
+      pushToCloud();
       refreshSidebar();
       showToast('Backup restaurado com sucesso');
     } catch(err) {
@@ -1315,7 +1496,7 @@ function showToast(msg,err=false) {
 // ══ COMISSÕES ══
 const COM_KEY = 'bi_drives_com_v2';
 function loadCom()  { try { return JSON.parse(localStorage.getItem(COM_KEY)||'{}'); } catch { return {}; } }
-function saveCom(c) { localStorage.setItem(COM_KEY, JSON.stringify(c)); }
+function saveCom(c) { localStorage.setItem(COM_KEY, JSON.stringify(c)); schedulePush(); }
 // COM = { normal:{car:val}, ouro:{car:val}, prata:{car:val}, bronze:{car:val} }
 let COM = loadCom();
 const TIERS = ['normal','ouro','prata','bronze'];
@@ -1517,8 +1698,30 @@ function exportComissoesExcel(tid) {
 // INIT
 document.getElementById('imp-date').value = new Date().toISOString().split('T')[0];
 document.getElementById('gas-date').value = new Date().toISOString().split('T')[0];
-refreshSidebar();
-renderGas();
+
+// Close modal on backdrop click
+document.getElementById('sync-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('sync-modal')) closeSyncConfig();
+});
+
+// Load from cloud on startup, fall back to local
+(async () => {
+  const cfg = getSyncCfg();
+  if (cfg.apiKey && cfg.binId) {
+    setSyncStatus('loading', 'Sincronizando...');
+    const ok = await pullFromCloud();
+    if (ok) {
+      refreshAll();
+    } else {
+      refreshSidebar();
+      renderGas();
+    }
+  } else {
+    setSyncStatus('off', 'Não configurado');
+    refreshSidebar();
+    renderGas();
+  }
+})();
 </script>
 </body>
 </html>
