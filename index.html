@@ -825,6 +825,13 @@ function getSyncCfg() {
 }
 function saveSyncCfg(cfg) { localStorage.setItem(SYNC_KEY, JSON.stringify(cfg)); }
 
+// Detect correct auth header based on key prefix
+function authHeaders(apiKey, extra) {
+  const isMaster = apiKey.startsWith('$2b$');
+  const hdr = isMaster ? 'X-Master-Key' : 'X-Access-Key';
+  return { 'Content-Type': 'application/json', [hdr]: apiKey, ...extra };
+}
+
 function setSyncStatus(state, msg) {
   const dot = document.getElementById('sync-dot');
   const txt = document.getElementById('sync-msg');
@@ -864,7 +871,7 @@ async function pushToCloud() {
   try {
     const res = await fetch(`${JSONBIN_BASE}/b/${cfg.binId}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'X-Master-Key': cfg.apiKey },
+      headers: authHeaders(cfg.apiKey),
       body: JSON.stringify(getPayload())
     });
     if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -881,7 +888,7 @@ async function pullFromCloud() {
   setSyncStatus('loading', 'Carregando...');
   try {
     const res = await fetch(`${JSONBIN_BASE}/b/${cfg.binId}/latest`, {
-      headers: { 'X-Master-Key': cfg.apiKey }
+      headers: authHeaders(cfg.apiKey)
     });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const json = await res.json();
@@ -900,7 +907,7 @@ async function pullFromCloud() {
 async function createBin(apiKey) {
   const res = await fetch(`${JSONBIN_BASE}/b`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-Master-Key': apiKey, 'X-Bin-Name': 'BI Drives', 'X-Bin-Private': 'true' },
+    headers: authHeaders(apiKey, { 'X-Bin-Name': 'BI Drives', 'X-Bin-Private': 'true' }),
     body: JSON.stringify(getPayload())
   });
   if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -936,7 +943,7 @@ async function saveAndTestSync() {
     } else {
       // Test read
       const res = await fetch(`${JSONBIN_BASE}/b/${finalBinId}/latest`, {
-        headers: { 'X-Master-Key': apiKey }
+        headers: authHeaders(apiKey)
       });
       if (!res.ok) throw new Error('Bin não encontrado ou chave inválida (HTTP ' + res.status + ')');
       const json = await res.json();
