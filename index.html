@@ -1184,16 +1184,16 @@ function extractRecords(rows) {
   // col offsets within section: +0=time, +1=client, +3=vendedor, +5=C/D, +10=instrutor, +14=status
   // Cols 150 and 165 are reused across multiple sub-sections with different row ranges
   const sections = [
-    // Section 1 — header row 0, data rows 1-42
+    // Section 1 — header row 0, data rows 1-32
     [0,   'MUSTANG BLACK',         1, 43],
     [15,  'MUSTANG WHITE',         1, 43],
     [30,  'MUSTANG RED',           1, 43],
     [45,  '718',                   1, 43],
-    [60,  'PORSCHE 911 CARRERA',   1, 33],  // replaced by Carrera S at row 33
-    [75,  'MASERATI GRANCABRIO',   1, 33],  // replaced by Dodge Challenger at row 33
-    [90,  'CAMARO BORDO',          1, 33],  // replaced by Mustang 5.0 at row 33
-    [105, 'MUSTANG 2025',          1, 33],  // replaced by Porsche Boxster at row 33
-    [120, 'FERRARI CALIFORNIA',    1, 33],  // replaced by Mustang GT at row 33
+    [60,  'PORSCHE 911 CARRERA',   1, 33],
+    [75,  'MASERATI GRANCABRIO',   1, 33],
+    [90,  'CAMARO BORDO',          1, 33],
+    [105, 'MUSTANG 2025',          1, 33],
+    [120, 'FERRARI CALIFORNIA',    1, 33],
     [135, 'SHELBY GT-500',         1, 43],
     // Col 150 split: Corvette C6 rows 1-22, Camaro Amarelo rows 23-42
     [150, 'CORVETTE C6',           1, 23],
@@ -1201,26 +1201,27 @@ function extractRecords(rows) {
     // Col 165 split: BMW M3 → Ferrari 360 Modena → Toyota Supra → Audi RS6
     [165, 'BMW M3',                1, 12],
     [165, 'FERRARI 360 MODENA',    12, 23],
-    [165, 'TOYOTA SUPRA',          23, 33],
+    [165, 'TOYOTA SUPRA',          23, 34],
     [165, 'AUDI RS6',              34, 43],
-    // Sub-section B — header row 32, cols 60-120, data rows 33-50 (Mustang GT continues into block 2)
-    [60,  'PORSCHE 911 CARRERA S', 33, 43],
-    [75,  'DODGE CHALLENGER',      33, 43],
-    [90,  'MUSTANG 5.0',           33, 43],
-    [105, 'PORSCHE BOXSTER',       33, 43],
-    [120, 'MUSTANG GT',            33, 51],  // continues past block boundary to row 50
-    // Section 2 — header row 42, data rows 43-64
-    [0,   'MCLAREN 600LT',         43, 65],
-    [15,  'FERRARI PORTOFINO',     43, 65],
-    [30,  'LAMBORGHINI GALLARDO',  43, 65],
-    [45,  'CORVETTE C7',           43, 65],
-    // Col 135: BMW M4 sub-section rows 23-43 (header row 22)
+    // Col 135: BMW M4 sub-section rows 23-43
     [135, 'BMW M4',                23, 43],
-    // Col 150: Camaro Amarelo second section continues in block 2 rows 44-65
-    [150, 'CAMARO AMARELO',        44, 66],
-    // Sub-section 2b — header row 43, data rows 44-64
-    [135, 'CALIFORNIA AMARELA',    44, 65],
-    [165, 'CAMARO BRANCO',         44, 65],
+    // Sub-section B — header row 32, cols 60-120
+    // Use 999 as safe limit — relies on client name check to stop at empty rows
+    [60,  'PORSCHE 911 CARRERA S', 33, 999],
+    [75,  'DODGE CHALLENGER',      33, 999],
+    [90,  'MUSTANG 5.0',           33, 999],
+    [105, 'PORSCHE BOXSTER',       33, 999],
+    [120, 'MUSTANG GT',            33, 999],
+    // Section 2 — header row 42, cols 0-45
+    [0,   'MCLAREN 600LT',         43, 999],
+    [15,  'FERRARI PORTOFINO',     43, 999],
+    [30,  'LAMBORGHINI GALLARDO',  43, 999],
+    [45,  'CORVETTE C7',           43, 999],
+    // Sub-section 2b — header row 43
+    [135, 'CALIFORNIA AMARELA',    44, 999],
+    [165, 'CAMARO BRANCO',         44, 999],
+    // Camaro Amarelo second section
+    [150, 'CAMARO AMARELO',        44, 999],
   ];
   const out = [];
   sections.forEach(([col, car, a, b]) => {
