@@ -1186,7 +1186,8 @@ function parseXLSX(file, cb) {
 
 function extractRecords(rows) {
   // Each section: [col_offset, car_name, data_start_row, data_end_row]
-  // col offsets within section: +0=time, +1=client, +3=vendedor, +5=C/D, +10=instrutor, +14=status
+  // col offsets: +1=client, +3=vendedor, +5=C/D, +10=instrutor, +14=status
+  // STATUS is at col+14 (confirmed: car at idx X, STATUS header at idx X+14)
   // Cols 150 and 165 are reused across multiple sub-sections with different row ranges
   const sections = [
     // Section 1 — header row 0, data rows 1-32
@@ -1258,21 +1259,29 @@ function importData() {
   const dateKey = `${d}/${m}/${y}`;
   log(`<span class="log-info">Processando ${dateKey}...</span>`);
   parseXLSX(pendingFile, rows => {
-    const recs = extractRecords(rows);
-    if (!recs.length) { log(`<span class="log-err">Nenhum registro encontrado.</span>`); showToast('Erro: sem registros', true); return; }
-    const upd = !!DB[dateKey];
-    DB[dateKey] = recs; saveDB(DB);
-    log(`<span class="log-ok">✓ ${recs.length} registros — ${dateKey}${upd?' (atualizado)':''}</span>`);
-    log(`<span class="log-ok">  Drives: ${recs.filter(r=>r.tipo==='Drive').length}  Caronas: ${recs.filter(r=>r.tipo==='Carona').length}</span>`);
-    pendingFile = null;
-    document.getElementById('file-inp').value = '';
-    document.getElementById('upload-drop').className = 'upload-drop';
-    document.getElementById('ud-icon').textContent = '📂';
-    document.getElementById('ud-title').textContent = 'Arraste ou clique para selecionar';
-    document.getElementById('ud-sub').textContent = 'Arquivos .xlsx ou .xls';
-    document.getElementById('imp-btn').disabled = true;
-    refreshSidebar();
-    showToast(`✓ ${recs.length} registros — ${dateKey}`);
+    try {
+      log(`<span class="log-info">Linhas lidas: ${rows.length}</span>`);
+      const recs = extractRecords(rows);
+      log(`<span class="log-info">Registros extraídos: ${recs.length}</span>`);
+      if (!recs.length) { log(`<span class="log-err">Nenhum registro com status OK encontrado.</span>`); showToast('Erro: sem registros', true); return; }
+      const upd = !!DB[dateKey];
+      DB[dateKey] = recs; saveDB(DB);
+      log(`<span class="log-ok">✓ ${recs.length} registros — ${dateKey}${upd?' (atualizado)':''}</span>`);
+      log(`<span class="log-ok">  Drives: ${recs.filter(r=>r.tipo==='Drive').length}  Caronas: ${recs.filter(r=>r.tipo==='Carona').length}</span>`);
+      pendingFile = null;
+      document.getElementById('file-inp').value = '';
+      document.getElementById('upload-drop').className = 'upload-drop';
+      document.getElementById('ud-icon').textContent = '📂';
+      document.getElementById('ud-title').textContent = 'Arraste ou clique para selecionar';
+      document.getElementById('ud-sub').textContent = 'Arquivos .xlsx ou .xls';
+      document.getElementById('imp-btn').disabled = true;
+      refreshSidebar();
+      showToast(`✓ ${recs.length} registros — ${dateKey}`);
+    } catch(err) {
+      log(`<span class="log-err">Erro: ${err.message}</span>`);
+      console.error(err);
+      showToast('Erro na importação: ' + err.message, true);
+    }
   });
 }
 
