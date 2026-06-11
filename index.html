@@ -1232,9 +1232,12 @@ function extractRecords(rows) {
   sections.forEach(([col, car, a, b]) => {
     for (let i = a; i < Math.min(b, rows.length); i++) {
       const row = rows[i];
-      const g = o => { const idx = col+o; return idx < row.length ? row[idx] : null; };
+      const g = o => { const idx = col+o; return (idx >= 0 && idx < row.length) ? row[idx] : null; };
       const cli = g(1);
       if (!cli || typeof cli !== 'string' || cli.trim().length < 3) continue;
+      // Só contabiliza se status = OK
+      const status = g(14) ? String(g(14)).trim().toUpperCase() : '';
+      if (status !== 'OK') continue;
       const cd = g(5), cds = cd ? String(cd).trim().toUpperCase() : '';
       out.push({
         carro:    car,
@@ -1242,7 +1245,7 @@ function extractRecords(rows) {
         vendedor: g(3) ? String(g(3)).trim() : '',
         tipo:     cds === 'D' ? 'Drive' : cds === 'C' ? 'Carona' : cds || '—',
         instrutor: g(10) ? String(g(10)).trim() : '',
-        status:   g(14) ? String(g(14)).trim() : '',
+        status:   'OK',
       });
     }
   });
