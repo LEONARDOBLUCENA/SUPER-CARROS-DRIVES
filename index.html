@@ -1443,12 +1443,12 @@ function exportGasExcel() {
 // ══ DASHBOARD ══
 function getBaseRecords() {
   if (activeDay !== 'all') return DB[activeDay] || [];
-  // filter by month if set
   let entries = Object.entries(DB);
   if (activeMonth !== 'all') {
+    // activeMonth is "MM/YYYY"
     entries = entries.filter(([dateKey]) => {
       const p = dateKey.split('/'); // DD/MM/YYYY
-      return p.length === 3 && p[1] === activeMonth;
+      return p.length === 3 && (p[1]+'/'+p[2]) === activeMonth;
     });
   }
   return entries.flatMap(([,recs]) => recs);
@@ -1473,7 +1473,7 @@ function refreshSelects() {
 
   // Days filtered by active month
   const filteredDays = activeMonth === 'all' ? allDays :
-    allDays.filter(d => { const p=d.split('/'); return p.length===3 && p[1]===activeMonth; });
+    allDays.filter(d => { const p=d.split('/'); return p.length===3 && (p[1]+'/'+p[2])===activeMonth; });
 
   const base  = getBaseRecords();
   const cars  = [...new Set(base.map(r=>r.carro).filter(Boolean))].sort();
@@ -1532,7 +1532,7 @@ function renderDashboard() {
     if (activeDay==='all') {
       let entries = Object.entries(DB);
       if (activeMonth !== 'all') {
-        entries = entries.filter(([dk]) => { const p=dk.split('/'); return p.length===3 && p[1]===activeMonth; });
+        entries = entries.filter(([dk]) => { const p=dk.split('/'); return p.length===3 && (p[1]+'/'+p[2])===activeMonth; });
       }
       let all = entries.flatMap(([day,recs])=>recs.map(r=>({...r,day})));
       all = all.filter(r => r.instrutor && r.instrutor.trim());
