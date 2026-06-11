@@ -661,6 +661,10 @@ tbody td.td-main { color:var(--text); font-weight:500; }
       </div>
       <div class="filter-bar" id="filter-bar" style="display:none">
         <div class="filter-group">
+          <label class="filter-label">Mês</label>
+          <select class="filter-select" id="sel-month" onchange="setMonth(this.value)"></select>
+        </div>
+        <div class="filter-group">
           <label class="filter-label">Dia</label>
           <select class="filter-select" id="sel-day" onchange="setDay(this.value)"></select>
         </div>
@@ -934,9 +938,10 @@ try { localStorage.removeItem('bi_drives_gas_v1'); } catch(e) {}
 
 let DB  = loadDB();
 let GAS = loadGas();
-let activeDay  = 'all';
-let activeCar  = 'all';
-let activeInst = 'all';
+let activeDay   = 'all';
+let activeMonth = 'all';
+let activeCar   = 'all';
+let activeInst  = 'all';
 let pendingFile = null;
 let charts = {};
 
@@ -1437,7 +1442,16 @@ function exportGasExcel() {
 
 // ══ DASHBOARD ══
 function getBaseRecords() {
-  return activeDay==='all' ? Object.values(DB).flat() : (DB[activeDay]||[]);
+  if (activeDay !== 'all') return DB[activeDay] || [];
+  // filter by month if set
+  let entries = Object.entries(DB);
+  if (activeMonth !== 'all') {
+    entries = entries.filter(([dateKey]) => {
+      const p = dateKey.split('/'); // DD/MM/YYYY
+      return p.length === 3 && p[1] === activeMonth;
+    });
+  }
+  return entries.flatMap(([,recs]) => recs);
 }
 function getRecords() {
   let recs = getBaseRecords();
@@ -1447,21 +1461,41 @@ function getRecords() {
 }
 
 function refreshSelects() {
-  const days  = sortedDays();
+  const allDays = sortedDays();
+
+  // Build month options from all days
+  const monthSet = new Set();
+  allDays.forEach(d => { const p=d.split('/'); if(p.length===3) monthSet.add(p[1]+'/'+p[2]); });
+  const months = [...monthSet].sort((a,b)=>a.split('/').reverse().join('').localeCompare(b.split('/').reverse().join('')));
+  const MONTH_NAMES = {'01':'Janeiro','02':'Fevereiro','03':'Março','04':'Abril',
+    '05':'Maio','06':'Junho','07':'Julho','08':'Agosto','09':'Setembro',
+    '10':'Outubro','11':'Novembro','12':'Dezembro'};
+
+  // Days filtered by active month
+  const filteredDays = activeMonth === 'all' ? allDays :
+    allDays.filter(d => { const p=d.split('/'); return p.length===3 && p[1]===activeMonth; });
+
   const base  = getBaseRecords();
   const cars  = [...new Set(base.map(r=>r.carro).filter(Boolean))].sort();
   const insts = [...new Set(base.map(r=>r.instrutor).filter(Boolean))].sort();
-  function pop(id, opts, cur) {
+
+  function pop(id, opts, cur, labelFn) {
     const sel = document.getElementById(id); if (!sel) return;
     sel.innerHTML = '<option value="all">Todos</option>' +
-      opts.map(o=>`<option value="${o}"${o===cur?' selected':''}>${o}</option>`).join('');
+      opts.map(o=>`<option value="${o}"${o===cur?' selected':''}>${labelFn?labelFn(o):o}</option>`).join('');
     sel.value = cur;
   }
-  pop('sel-day',  days,  activeDay);
+
+  pop('sel-month', months, activeMonth, m => {
+    const [mm,yyyy] = m.split('/');
+    return `${MONTH_NAMES[mm]||mm} ${yyyy}`;
+  });
+  pop('sel-day',  filteredDays, activeDay);
   pop('sel-car',  cars,  activeCar);
   pop('sel-inst', insts, activeInst);
+
   const fb = document.getElementById('filter-bar');
-  if (fb) fb.style.display = days.length ? 'flex' : 'none';
+  if (fb) fb.style.display = allDays.length ? 'flex' : 'none';
 }
 
 function renderDashboard() {
@@ -1496,7 +1530,11 @@ function renderDashboard() {
   const n = records.length;
   const trows = (() => {
     if (activeDay==='all') {
-      let all = Object.entries(DB).flatMap(([day,recs])=>recs.map(r=>({...r,day})));
+      let entries = Object.entries(DB);
+      if (activeMonth !== 'all') {
+        entries = entries.filter(([dk]) => { const p=dk.split('/'); return p.length===3 && p[1]===activeMonth; });
+      }
+      let all = entries.flatMap(([day,recs])=>recs.map(r=>({...r,day})));
       all = all.filter(r => r.instrutor && r.instrutor.trim());
       if (activeCar  !== 'all') all = all.filter(r=>r.carro     === activeCar);
       if (activeInst !== 'all') all = all.filter(r=>r.instrutor === activeInst);
@@ -1556,6 +1594,7 @@ function kpi(label,val,meta,color) {
 }
 function pct(a,b) { return b?Math.round(a/b*100):0; }
 function setDay(v)  { activeDay=v;  renderDashboard(); }
+function setMonth(v){ activeMonth=v; activeDay='all'; renderDashboard(); }
 function setCar(v)  { activeCar=v;  renderDashboard(); }
 function setInst(v) { activeInst=v; renderDashboard(); }
 
