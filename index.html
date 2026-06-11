@@ -919,13 +919,18 @@ tbody td.td-main { color:var(--text); font-weight:500; }
 
 <script>
 // ══ STORAGE LOCAL ══
-const KEY     = 'bi_drives_v4';
-const GAS_KEY = 'bi_drives_gas_v1';
+// DB e GAS ficam apenas em memória — Supabase é a fonte de verdade
+// Apenas COM (premissas) e config ficam no localStorage (dados pequenos)
 const SYNC_KEY = 'bi_drives_sync_cfg';
-function loadDB()  { try { return JSON.parse(localStorage.getItem(KEY)||'{}');     } catch { return {}; } }
-function loadGas() { try { return JSON.parse(localStorage.getItem(GAS_KEY)||'[]'); } catch { return []; } }
-function saveDB(d)  { localStorage.setItem(KEY,     JSON.stringify(d)); schedulePush(); }
-function saveGas(g) { localStorage.setItem(GAS_KEY, JSON.stringify(g)); schedulePush(); }
+function loadDB()  { return {}; }   // sempre começa vazio, carrega do Supabase
+function loadGas() { return []; }   // sempre começa vazio, carrega do Supabase
+function saveDB(d)  { schedulePush(); }   // só envia para Supabase
+function saveGas(g) { schedulePush(); }   // só envia para Supabase
+
+// Limpa chaves antigas do localStorage para liberar espaço
+try { localStorage.removeItem('bi_drives_v4'); } catch(e) {}
+try { localStorage.removeItem('bi_drives_v3'); } catch(e) {}
+try { localStorage.removeItem('bi_drives_gas_v1'); } catch(e) {}
 
 let DB  = loadDB();
 let GAS = loadGas();
@@ -968,8 +973,7 @@ function applyPayload(p) {
   GAS = p.gas    || [];
   COM = p.com    || {};
   TIERS.forEach(t => { if (!COM[t]) COM[t]={}; });
-  localStorage.setItem(KEY,     JSON.stringify(DB));
-  localStorage.setItem(GAS_KEY, JSON.stringify(GAS));
+  // DB e GAS ficam só em memória — COM vai para localStorage (dados pequenos)
   saveCom(COM);
 }
 
