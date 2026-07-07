@@ -1039,7 +1039,7 @@ async function pullFromCloud() {
     setSyncStatus('ok', 'Atualizado · ' + new Date().toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'}));
     return true;
   } catch(e) {
-    setSyncStatus('err', 'Sem conexão');
+    setSyncStatus('err', 'Erro: ' + e.message);
     console.error('Pull error:', e);
     return false;
   }
@@ -1138,23 +1138,20 @@ function restoreJSON(input) {
   const file = input.files[0]; if (!file) return;
   const reader = new FileReader();
   reader.onload = e => {
-    // clear input AFTER reading
-    input.value = '';
     try {
       const payload = JSON.parse(e.target.result);
       if (!payload.drives) throw new Error('Formato inválido');
-      if (!confirm('Restaurar backup de ' + (payload.exported ? new Date(payload.exported).toLocaleString('pt-BR') : 'data desconhecida') + '?\n\nIsso substituirá os dados atuais.')) return;
+      if (!confirm(`Restaurar backup de ${payload.exported ? new Date(payload.exported).toLocaleString('pt-BR') : 'data desconhecida'}?\n\nIsso substituirá os dados atuais.`)) return;
       applyPayload(payload);
-      refreshAll();
-      showToast('Backup restaurado — enviando para nuvem...');
       pushToCloud();
+      refreshSidebar();
+      showToast('Backup restaurado com sucesso');
     } catch(err) {
       showToast('Arquivo inválido: ' + err.message, true);
-      console.error(err);
     }
   };
-  reader.onerror = () => showToast('Erro ao ler arquivo', true);
   reader.readAsText(file);
+  input.value = '';
 }
 
 // ══ IMPORT: FILE ══
@@ -1681,13 +1678,20 @@ function buildTipoChart(drives,caronas) {
 function buildInstChart(s) {
   dc('inst'); const ctx=document.getElementById('ch-inst'); if(!ctx)return;
   const top=s.slice(0,10);
+  const totals=top.map(([,v])=>v.drive+v.carona);
   charts['inst']=new Chart(ctx,{type:'bar',data:{labels:top.map(([i])=>i),datasets:[
     {label:'Drive', data:top.map(([,v])=>v.drive), backgroundColor:'rgba(59,130,246,.75)',borderRadius:3,stack:'s'},
     {label:'Carona',data:top.map(([,v])=>v.carona),backgroundColor:'rgba(245,158,11,.75)',borderRadius:3,stack:'s'},
   ]},options:{...CD,indexAxis:'y',scales:{
     x:{stacked:true,ticks:{color:'#4a526a',font:{family:'Inter',size:10}},grid:{color:'rgba(255,255,255,.03)'}},
     y:{stacked:true,ticks:{color:'#8892aa',font:{family:'Inter',size:10}},grid:{color:'transparent'}},
-  }}});
+  },animation:{onComplete:function(){
+    const ch=this,c2=ch.ctx;
+    c2.save();c2.font='bold 10px Inter';c2.fillStyle='#e2e5f0';c2.textBaseline='middle';
+    const ds=ch.getDatasetMeta(1);
+    ds.data.forEach(function(bar,i){c2.fillText(totals[i],bar.x+6,bar.y);});
+    c2.restore();
+  }}}});
 }
 function buildVendChart(s) {
   dc('vend'); const ctx=document.getElementById('ch-vend'); if(!ctx)return;
@@ -1904,309 +1908,26 @@ function renderTop5() {
   if (!entries.length) { el.innerHTML=''; return; }
   const top3 = entries.sort((a,b) => b.total - a.total || b.drives - a.drives).slice(0,3);
   const maxTotal = top3[0].total;
-  el.innerHTML = `
-    <div class="card" style="margin-bottom:24px;overflow:hidden;padding:0;">
-      <div class="table-toolbar" style="padding:12px 16px;">
-        <div class="table-toolbar-title">&#127942; Top 3 &#8212; Mais Passeios em um &#218;nico Dia</div>
-      </div>
-      <table class="com-inst-table">
-        <thead><tr>
-          <th style="width:40px;text-align:center">#</th>
-          <th>Instrutor</th>
-          <th style="text-align:center">Dia</th>
-          <th style="text-align:right">Drives</th>
-          <th style="text-align:right">Caronas</th>
-          <th style="text-align:right">Total</th>
-        </tr></thead>
-        <tbody>
-          ${top3.map((r,i) => {
-            const medals = ['&#127947;','&#129352;','&#129353;'];
-            const bw = Math.round((r.total/maxTotal)*120);
-            return '<tr>'
-              +'<td style="text-align:center;font-size:16px">'+medals[i]+'</td>'
-              +'<td class="td-main">'+r.inst+'<span class="rank-bar" style="width:'+bw+'px"></span></td>'
-              +'<td style="text-align:center;font-family:var(--mono);font-size:11px;color:var(--text3)">'+r.day+'</td>'
-              +'<td class="td-num">'+r.drives+'</td>'
-              +'<td class="td-num">'+r.caronas+'</td>'
-              +'<td style="text-align:right;font-family:var(--mono);font-weight:700;color:var(--text)">'+r.total+'</td>'
-              +'</tr>';
-          }).join('')}
-        </tbody>
-      </table>
-    </div>`;
-}
-function buildInstChart(s) {
-  dc('inst'); const ctx=document.getElementById('ch-inst'); if(!ctx)return;
-  const top=s.slice(0,10);
-  const totals=top.map(([,v])=>v.drive+v.carona);
-  charts['inst']=new Chart(ctx,{type:'bar',data:{labels:top.map(([i])=>i),datasets:[
-    {label:'Drive', data:top.map(([,v])=>v.drive), backgroundColor:'rgba(59,130,246,.75)',borderRadius:3,stack:'s'},
-    {label:'Carona',data:top.map(([,v])=>v.carona),backgroundColor:'rgba(245,158,11,.75)',borderRadius:3,stack:'s'},
-  ]},options:{...CD,indexAxis:'y',scales:{
-    x:{stacked:true,ticks:{color:'#4a526a',font:{family:'Inter',size:10}},grid:{color:'rgba(255,255,255,.03)'}},
-    y:{stacked:true,ticks:{color:'#8892aa',font:{family:'Inter',size:10}},grid:{color:'transparent'}},
-  },animation:{onComplete:function(){
-    const ch=this, c2=ch.ctx;
-    c2.save(); c2.font='bold 10px Inter'; c2.fillStyle='#e2e5f0'; c2.textBaseline='middle';
-    const ds=ch.getDatasetMeta(1);
-    ds.data.forEach((bar,i)=>{ c2.fillText(totals[i], bar.x+6, bar.y); });
-    c2.restore();
-  }}}});
-}
-function buildVendChart(s) {
-  dc('vend'); const ctx=document.getElementById('ch-vend'); if(!ctx)return;
-  charts['vend']=new Chart(ctx,{type:'doughnut',data:{
-    labels:s.map(([v])=>v),
-    datasets:[{data:s.map(([,n])=>n),backgroundColor:PAL,borderWidth:0,hoverOffset:8}]
-  },options:{...CD,plugins:{...CD.plugins,legend:{...CD.plugins.legend,position:'right'}}}});
-}
-
-// TOAST
-function showToast(msg,err=false) {
-  const t=document.getElementById('toast');
-  t.textContent=msg; t.className=`toast show ${err?'err':'ok'}`;
-  setTimeout(()=>{t.className='toast';},3000);
-}
-
-// ══ COMISSÕES ══
-const COM_KEY = 'bi_drives_com_v2';
-function loadCom()  { try { return JSON.parse(localStorage.getItem(COM_KEY)||'{}'); } catch { return {}; } }
-function saveCom(c) { localStorage.setItem(COM_KEY, JSON.stringify(c)); schedulePush(); }
-// COM = { normal:{car:val}, ouro:{car:val}, prata:{car:val}, bronze:{car:val} }
-let COM = loadCom();
-const TIERS = ['normal','ouro','prata','bronze'];
-function getTier(tid) { if (!COM[tid]) COM[tid]={}; return COM[tid]; }
-
-const ALL_CARS = [
-  'MUSTANG BLACK','MUSTANG WHITE','MUSTANG RED','718','PORSCHE 911 CARRERA',
-  'MASERATI GRANCABRIO','CAMARO BORDO','MUSTANG 2025','FERRARI CALIFORNIA',
-  'SHELBY GT-500','CORVETTE C6','BMW M3','BMW M4','FERRARI 360 MODENA','CAMARO AMARELO',
-  'TOYOTA SUPRA','AUDI RS6','PORSCHE 911 CARRERA S','DODGE CHALLENGER',
-  'MUSTANG 5.0','PORSCHE BOXSTER','MUSTANG GT','MCLAREN 600LT',
-  'FERRARI PORTOFINO','LAMBORGHINI GALLARDO','CORVETTE C7',
-  'CALIFORNIA AMARELA','CAMARO BRANCO'
-];
-
-function populateCarSel() {
-  TIERS.forEach(tid => {
-    const sel = document.getElementById('com-car-'+tid); if (!sel) return;
-    const tier = getTier(tid);
-    sel.innerHTML = ALL_CARS.map(c =>
-      `<option value="${c}">${c}${tier[c]!=null?' ✓':''}</option>`
-    ).join('');
-  });
-}
-
-function addPremissa(tid) {
-  const car = document.getElementById('com-car-'+tid)?.value;
-  const val = parseFloat(document.getElementById('com-val-'+tid)?.value);
-  if (!car || isNaN(val) || val < 0) { showToast('Preencha carro e valor', true); return; }
-  getTier(tid)[car] = val;
-  saveCom(COM);
-  document.getElementById('com-val-'+tid).value = '';
-  renderAllPremissas();
-  populateCarSel();
-  renderComissoes();
-  showToast(`✓ [${tid.toUpperCase()}] ${car}: R$ ${val.toFixed(2)}`);
-}
-
-function deletePremissa(tid, car) {
-  delete getTier(tid)[car]; saveCom(COM);
-  renderAllPremissas(); populateCarSel(); renderComissoes();
-}
-
-function startEditPremissa(tid, car) {
-  const rowEl = document.getElementById('prow-'+tid+'-'+CSS.escape(car)); if (!rowEl) return;
-  const td = rowEl.querySelector('.td-val');
-  const cur = getTier(tid)[car] || 0;
-  const esc = car.replace(/'/g,"\\'");
-  td.innerHTML = `<input class="inline-edit" id="ei-${tid}-${CSS.escape(car)}" type="number" value="${cur}" step="0.01"
-    onkeydown="if(event.key==='Enter')saveEditPremissa('${tid}','${esc}'); if(event.key==='Escape')renderAllPremissas();">`;
-  document.getElementById('ei-'+tid+'-'+CSS.escape(car))?.focus();
-}
-
-function saveEditPremissa(tid, car) {
-  const inp = document.getElementById('ei-'+tid+'-'+CSS.escape(car)); if (!inp) return;
-  const val = parseFloat(inp.value);
-  if (isNaN(val) || val < 0) { showToast('Valor inválido', true); return; }
-  getTier(tid)[car] = val; saveCom(COM);
-  renderAllPremissas(); populateCarSel(); renderComissoes();
-}
-
-function renderPremissaTable(tid) {
-  const tbody = document.getElementById('premissa-body-'+tid); if (!tbody) return;
-  const tier = getTier(tid);
-  tbody.innerHTML = ALL_CARS.map(car => {
-    const val = tier[car];  // __carona__ is not in ALL_CARS so won't appear
-    const esc = car.replace(/'/g,"\\'");
-    return `<tr id="prow-${tid}-${CSS.escape(car)}">
-      <td class="td-car">${car}</td>
-      <td class="td-val" style="text-align:right">${val!=null?'R$ '+val.toFixed(2):'<span style="color:var(--text3)">—</span>'}</td>
-      <td style="text-align:center;white-space:nowrap">
-        ${val!=null?`<button class="td-edit" onclick="startEditPremissa('${tid}','${esc}')">editar</button>
-        <button class="td-del" onclick="deletePremissa('${tid}','${esc}')">&#x2715;</button>`:''}
-      </td>
-    </tr>`;
-  }).join('');
-}
-function renderAllPremissas() { TIERS.forEach(tid => renderPremissaTable(tid)); }
-
-function getComYears() {
-  const years = new Set();
-  Object.keys(DB).forEach(k => { const p=k.split('/'); if(p.length===3) years.add(p[2]); });
-  return [...years].sort();
-}
-
-function populateComFilters() {
-  const anoSel = document.getElementById('com-ano'); if (!anoSel) return;
-  const years = getComYears();
-  const curYear = anoSel.value;
-  anoSel.innerHTML = '<option value="all">Todos</option>' +
-    years.map(y=>`<option value="${y}"${y===curYear?' selected':''}>${y}</option>`).join('');
-  if (!curYear && years.length) anoSel.value = years[years.length-1];
-
-  // Populate dia select based on ano+mes filter
-  const diaSel = document.getElementById('com-dia'); if (!diaSel) return;
-  const ano = anoSel.value;
-  const mes = document.getElementById('com-mes')?.value||'all';
-  const curDia = diaSel.value;
-  const days = Object.keys(DB).filter(k => {
-    const p=k.split('/'); if(p.length!==3) return false;
-    const [,mm,yyyy]=p;
-    if(ano!=='all' && yyyy!==ano) return false;
-    if(mes!=='all' && mm!==mes) return false;
-    return true;
-  }).sort((a,b)=>a.split('/').reverse().join('').localeCompare(b.split('/').reverse().join('')));
-  diaSel.innerHTML = '<option value="all">Todos</option>' +
-    days.map(d=>`<option value="${d}"${d===curDia?' selected':''}>${d}</option>`).join('');
-  if(curDia && days.includes(curDia)) diaSel.value = curDia;
-}
-
-function getFilteredComRecords() {
-  const ano = document.getElementById('com-ano')?.value||'all';
-  const mes = document.getElementById('com-mes')?.value||'all';
-  const dia = document.getElementById('com-dia')?.value||'all';
-  const out = [];
-  Object.entries(DB).forEach(([dateKey,recs]) => {
-    const p=dateKey.split('/'); if(p.length!==3) return;
-    const [dd,mm,yyyy]=p;
-    if(ano!=='all' && yyyy!==ano) return;
-    if(mes!=='all' && mm!==mes) return;
-    if(dia!=='all' && dateKey!==dia) return;
-    recs.forEach(r=>out.push({...r, _day: dateKey}));
-  });
-  return out;
-}
-
-function renderInstTable(tid, allRecs) {
-  const tbody = document.getElementById('inst-body-'+tid);
-  const tfoot = document.getElementById('inst-foot-'+tid);
-  if (!tbody) return;
-  const tier = getTier(tid);
-  if (!allRecs.length) {
-    tbody.innerHTML=`<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--text3);font-size:12px;">Nenhum registro no período.</td></tr>`;
-    tfoot.innerHTML=''; return;
-  }
-  const instMap={};
-  allRecs.forEach(r=>{
-    if(!r.instrutor || !r.instrutor.trim()) return; // ignora sem instrutor
-    const inst=r.instrutor.trim();
-    if(!instMap[inst]) instMap[inst]={drives:0,caronas:0,carMap:{}};
-    if(r.tipo==='Drive'){
-      instMap[inst].drives++;
-      instMap[inst].carMap[r.carro]=(instMap[inst].carMap[r.carro]||0)+1;
-    } else if(r.tipo==='Carona') instMap[inst].caronas++;
-  });
-  const caronaVal = tier['__carona__'] != null ? tier['__carona__'] : 1.0;
-  function calcCom(carMap,caronas) {
-    return Object.entries(carMap).reduce((s,[car,cnt])=>s+(tier[car]!=null?tier[car]*cnt:0),0)+(caronas*caronaVal);
-  }
-  const sorted=Object.entries(instMap)
-    .map(([inst,d])=>({inst,drives:d.drives,caronas:d.caronas,com:calcCom(d.carMap,d.caronas)}))
-    .sort((a,b)=>b.drives-a.drives);
-  const maxD=sorted[0]?.drives||1;
-  const totD=sorted.reduce((s,r)=>s+r.drives,0);
-  const totC=sorted.reduce((s,r)=>s+r.caronas,0);
-  const totV=sorted.reduce((s,r)=>s+r.com,0);
-  const hasCom=sorted.some(r=>r.com>0);
-  tbody.innerHTML=sorted.map(row=>{
-    const bw=Math.round((row.drives/maxD)*50);
-    return `<tr>
-      <td class="td-main">${row.inst}<span class="rank-bar" style="width:${bw}px"></span></td>
-      <td class="td-num">${row.drives}</td>
-      <td class="td-num">${row.caronas}</td>
-      <td class="td-val">${hasCom&&row.com>0?'R$ '+row.com.toFixed(2):'<span style="color:var(--text3)">—</span>'}</td>
-    </tr>`;
-  }).join('');
-  tfoot.innerHTML=`<tr>
-    <td>TOTAL</td>
-    <td class="td-num" style="text-align:right">${totD}</td>
-    <td class="td-num" style="text-align:right">${totC}</td>
-    <td class="tf-val">${hasCom?'R$ '+totV.toFixed(2):'—'}</td>
-  </tr>`;
-}
-
-function renderTop5() {
-  const el = document.getElementById('com-top5'); if (!el) return;
-  // Always scan ALL days (ignore filters) to find top 5 single-day performances
-  const dayInstMap = {}; // { 'DD/MM/YYYY': { 'instrutor': {drives,caronas} } }
-  Object.entries(DB).forEach(([dateKey, recs]) => {
-    recs.forEach(r => {
-      if(!r.instrutor || !r.instrutor.trim()) return; // ignora sem instrutor
-      const inst = r.instrutor.trim();
-      if (!dayInstMap[dateKey]) dayInstMap[dateKey] = {};
-      if (!dayInstMap[dateKey][inst]) dayInstMap[dateKey][inst] = {drives:0, caronas:0};
-      if (r.tipo === 'Drive')  dayInstMap[dateKey][inst].drives++;
-      else if (r.tipo === 'Carona') dayInstMap[dateKey][inst].caronas++;
-    });
-  });
-
-  // Flatten to list of {day, inst, drives, caronas, total}
-  const entries = [];
-  Object.entries(dayInstMap).forEach(([day, instMap]) => {
-    Object.entries(instMap).forEach(([inst, data]) => {
-      entries.push({ day, inst, drives: data.drives, caronas: data.caronas, total: data.drives + data.caronas });
-    });
-  });
-
-  if (!entries.length) { el.innerHTML=''; return; }
-
-  // Sort by total desc, take top 5
-  const top5 = entries.sort((a,b) => b.total - a.total || b.drives - a.drives).slice(0,5);
-  const maxTotal = top5[0].total;
-
-  el.innerHTML = `
-    <div class="card" style="margin-bottom:24px;overflow:hidden;padding:0;">
-      <div class="table-toolbar" style="padding:12px 16px;">
-        <div class="table-toolbar-title">&#127942; Top 5 — Mais Passeios em um &#218;nico Dia</div>
-      </div>
-      <div>
-        <table class="com-inst-table">
-          <thead><tr>
-            <th style="width:40px;text-align:center">#</th>
-            <th>Instrutor</th>
-            <th style="text-align:center">Dia</th>
-            <th style="text-align:right">Drives</th>
-            <th style="text-align:right">Caronas</th>
-            <th style="text-align:right">Total</th>
-          </tr></thead>
-          <tbody>
-            ${top5.map((r,i) => {
-              const medals = ['&#127947;','&#129352;','&#129353;','4','5'];
-              const bw = Math.round((r.total/maxTotal)*120);
-              return `<tr>
-                <td style="text-align:center;font-size:16px">${medals[i]}</td>
-                <td class="td-main">${r.inst}<span class="rank-bar" style="width:${bw}px"></span></td>
-                <td style="text-align:center;font-family:var(--mono);font-size:11px;color:var(--text3)">${r.day}</td>
-                <td class="td-num">${r.drives}</td>
-                <td class="td-num">${r.caronas}</td>
-                <td style="text-align:right;font-family:var(--mono);font-weight:700;color:var(--text)">${r.total}</td>
-              </tr>`;
-            }).join('')}
-          </tbody>
-        </table>
-      </div>
-    </div>`;
+  const medals = ['\ud83e\udd47','\ud83e\udd48','\ud83e\udd49'];
+  el.innerHTML = '<div class="card" style="margin-bottom:24px;overflow:hidden;padding:0;">'
+    + '<div class="table-toolbar" style="padding:12px 16px;"><div class="table-toolbar-title">\ud83c\udfc6 Top 3 \u2014 Mais Passeios em um \u00danico Dia</div></div>'
+    + '<table class="com-inst-table"><thead><tr>'
+    + '<th style="width:40px;text-align:center">#</th><th>Instrutor</th>'
+    + '<th style="text-align:center">Dia</th><th style="text-align:right">Drives</th>'
+    + '<th style="text-align:right">Caronas</th><th style="text-align:right">Total</th>'
+    + '</tr></thead><tbody>'
+    + top3.map(function(r,i) {
+        var bw = Math.round((r.total/maxTotal)*120);
+        return '<tr>'
+          + '<td style="text-align:center;font-size:16px">' + medals[i] + '</td>'
+          + '<td class="td-main">' + r.inst + '<span class="rank-bar" style="width:' + bw + 'px"></span></td>'
+          + '<td style="text-align:center;font-family:var(--mono);font-size:11px;color:var(--text3)">' + r.day + '</td>'
+          + '<td class="td-num">' + r.drives + '</td>'
+          + '<td class="td-num">' + r.caronas + '</td>'
+          + '<td style="text-align:right;font-family:var(--mono);font-weight:700;color:var(--text)">' + r.total + '</td>'
+          + '</tr>';
+      }).join('')
+    + '</tbody></table></div>';
 }
 
 function renderComissoes() {
@@ -2272,6 +1993,9 @@ function toggleMobileMenu() {
   const isOpen = m.style.display === 'flex';
   m.style.display = isOpen ? 'none' : 'flex';
 }
+// Close mobile menu when switching tabs
+const _origSwitchTab = switchTab;
+
 // INIT
 document.getElementById('imp-date').value = new Date().toISOString().split('T')[0];
 document.getElementById('gas-date').value = new Date().toISOString().split('T')[0];
@@ -2283,21 +2007,14 @@ document.getElementById('sync-modal').addEventListener('click', e => {
 
 // Load from cloud on startup, fall back to local
 (async () => {
-  try {
-    setSyncStatus('loading', 'Sincronizando...');
-    const ok = await pullFromCloud();
-    if (ok) {
-      refreshAll();
-    } else {
-      setSyncStatus('off', 'Sem dados — use Restaurar ou importe');
-      refreshSidebar();
-      renderGas();
-    }
-  } catch(e) {
-    setSyncStatus('err', 'Erro de conexão');
+  setSyncStatus('loading', 'Sincronizando...');
+  const ok = await pullFromCloud();
+  if (ok) {
+    refreshAll();
+  } else {
+    setSyncStatus('off', 'Sem conexão — usando dados locais');
     refreshSidebar();
     renderGas();
-    console.error('Init error:', e);
   }
 })();
 </script>
