@@ -1039,7 +1039,7 @@ async function pullFromCloud() {
     setSyncStatus('ok', 'Atualizado · ' + new Date().toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'}));
     return true;
   } catch(e) {
-    setSyncStatus('err', 'Erro: ' + e.message);
+    setSyncStatus('err', 'Sem conexão');
     console.error('Pull error:', e);
     return false;
   }
@@ -2272,9 +2272,6 @@ function toggleMobileMenu() {
   const isOpen = m.style.display === 'flex';
   m.style.display = isOpen ? 'none' : 'flex';
 }
-// Close mobile menu when switching tabs
-const _origSwitchTab = switchTab;
-
 // INIT
 document.getElementById('imp-date').value = new Date().toISOString().split('T')[0];
 document.getElementById('gas-date').value = new Date().toISOString().split('T')[0];
@@ -2286,14 +2283,21 @@ document.getElementById('sync-modal').addEventListener('click', e => {
 
 // Load from cloud on startup, fall back to local
 (async () => {
-  setSyncStatus('loading', 'Sincronizando...');
-  const ok = await pullFromCloud();
-  if (ok) {
-    refreshAll();
-  } else {
-    setSyncStatus('off', 'Sem conexão — usando dados locais');
+  try {
+    setSyncStatus('loading', 'Sincronizando...');
+    const ok = await pullFromCloud();
+    if (ok) {
+      refreshAll();
+    } else {
+      setSyncStatus('off', 'Sem dados — use Restaurar ou importe');
+      refreshSidebar();
+      renderGas();
+    }
+  } catch(e) {
+    setSyncStatus('err', 'Erro de conexão');
     refreshSidebar();
     renderGas();
+    console.error('Init error:', e);
   }
 })();
 </script>
