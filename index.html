@@ -1138,20 +1138,23 @@ function restoreJSON(input) {
   const file = input.files[0]; if (!file) return;
   const reader = new FileReader();
   reader.onload = e => {
+    // clear input AFTER reading
+    input.value = '';
     try {
       const payload = JSON.parse(e.target.result);
       if (!payload.drives) throw new Error('Formato inválido');
-      if (!confirm(`Restaurar backup de ${payload.exported ? new Date(payload.exported).toLocaleString('pt-BR') : 'data desconhecida'}?\n\nIsso substituirá os dados atuais.`)) return;
+      if (!confirm('Restaurar backup de ' + (payload.exported ? new Date(payload.exported).toLocaleString('pt-BR') : 'data desconhecida') + '?\n\nIsso substituirá os dados atuais.')) return;
       applyPayload(payload);
+      refreshAll();
+      showToast('Backup restaurado — enviando para nuvem...');
       pushToCloud();
-      refreshSidebar();
-      showToast('Backup restaurado com sucesso');
     } catch(err) {
       showToast('Arquivo inválido: ' + err.message, true);
+      console.error(err);
     }
   };
+  reader.onerror = () => showToast('Erro ao ler arquivo', true);
   reader.readAsText(file);
-  input.value = '';
 }
 
 // ══ IMPORT: FILE ══
