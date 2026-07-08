@@ -1224,7 +1224,7 @@ function extractRecords(rows) {
     // Use 999 as safe limit — relies on client name check to stop at empty rows
     [60,  'PORSCHE 911 CARRERA S', 33, 999],
     [75,  'DODGE CHALLENGER',      33, 999],
-    [90,  'MUSTANG 5.0',           33, 999],
+    [90,  'CAMARO BRANCO',         33, 999],  // col 90 row 33
     [105, 'PORSCHE BOXSTER',       33, 999],
     [120, 'MUSTANG GT',            33, 999],
     // Section 2 — header row 42, cols 0-45
@@ -1234,7 +1234,7 @@ function extractRecords(rows) {
     [45,  'CORVETTE C7',           43, 999],
     // Sub-section 2b — header row 43
     [135, 'CALIFORNIA AMARELA',    44, 999],
-    [165, 'CAMARO BRANCO',         44, 999],
+    [165, 'MUSTANG 5.0',           44, 999],  // col 165 row 44
     // Camaro Amarelo second section
     [150, 'CAMARO AMARELO',        44, 999],
   ];
