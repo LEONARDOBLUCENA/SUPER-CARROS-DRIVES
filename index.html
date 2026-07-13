@@ -1214,11 +1214,11 @@ function extractRecords(rows) {
       if (!val || typeof val !== 'string') continue;
       const name = val.trim().toUpperCase();
       if (!CAR_NAMES.has(name)) continue;
-      // Confirm it's a header: INSTRUTOR or C/D within next 15 cols
+      // Confirm it's a header: INSTRUTOR or C/D within next 20 cols
       let isHeader = false;
-      for (let k = 1; k <= 15; k++) {
+      for (let k = 1; k <= 20; k++) {
         const nb = row[ci+k] ? String(row[ci+k]).trim().toUpperCase() : '';
-        if (nb === 'INSTRUTOR' || nb === 'C/D') { isHeader = true; break; }
+        if (nb === 'INSTRUTOR' || nb === 'C/D' || nb === 'VENDEDOR') { isHeader = true; break; }
       }
       if (isHeader) headers.push([ri, ci, val.trim()]);
     }
