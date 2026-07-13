@@ -1273,6 +1273,11 @@ function importData() {
     try {
       log(`<span class="log-info">Linhas lidas: ${rows.length}</span>`);
       const recs = extractRecords(rows);
+      // Debug: show detected cars
+      const carCount = {};
+      recs.forEach(r => { carCount[r.carro] = (carCount[r.carro]||0)+1; });
+      const carSummary = Object.entries(carCount).sort((a,b)=>b[1]-a[1]).map(([c,n])=>c+':'+n).join(', ');
+      log(`<span class="log-info">Carros: ${carSummary}</span>`);
       log(`<span class="log-info">Registros extraídos: ${recs.length}</span>`);
       if (!recs.length) { log(`<span class="log-err">Nenhum registro com status OK encontrado.</span>`); showToast('Erro: sem registros', true); return; }
       const upd = !!DB[dateKey];
