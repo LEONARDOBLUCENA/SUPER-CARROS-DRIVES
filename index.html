@@ -1194,50 +1194,46 @@ function parseXLSX(file, cb) {
 }
 
 function extractRecords(rows) {
-  // Each section: [col_offset, car_name, data_start_row, data_end_row]
-  // col offsets: +1=client, +3=vendedor, +5=C/D, +10=instrutor, +14=status
-  // STATUS is at col+14 (confirmed: car at idx X, STATUS header at idx X+14)
-  // Cols 150 and 165 are reused across multiple sub-sections with different row ranges
-  const sections = [
-    // Section 1 — header row 0, data rows 1-32
-    [0,   'MUSTANG BLACK',         1, 43],
-    [15,  'MUSTANG WHITE',         1, 43],
-    [30,  'MUSTANG RED',           1, 43],
-    [45,  '718',                   1, 43],
-    [60,  'PORSCHE 911 CARRERA',   1, 33],
-    [75,  'MASERATI GRANCABRIO',   1, 33],
-    [90,  'CAMARO BORDO',          1, 33],
-    [105, 'MUSTANG 2025',          1, 33],
-    [120, 'FERRARI CALIFORNIA',    1, 33],
-    [135, 'SHELBY GT-500',         1, 23],  // M4 takes over col 135 at row 23
-    // Col 150 split: Corvette C6 rows 1-22, Camaro Amarelo rows 23-42
-    [150, 'CORVETTE C6',           1, 23],
-    [150, 'CAMARO AMARELO',        23, 43],
-    // Col 165 split: BMW M3 → Ferrari 360 Modena → Toyota Supra → Audi RS6
-    [165, 'BMW M3',                1, 12],
-    [165, 'FERRARI 360 MODENA',    12, 23],
-    [165, 'TOYOTA SUPRA',          23, 34],
-    [165, 'AUDI RS6',              34, 43],
-    // Col 135: BMW M4 sub-section rows 23-43
-    [135, 'BMW M4',                23, 43],
-    // Sub-section B — header row 32, cols 60-120
-    // Use 999 as safe limit — relies on client name check to stop at empty rows
-    [60,  'PORSCHE 911 CARRERA S', 33, 999],
-    [75,  'DODGE CHALLENGER',      33, 999],
-    [90,  'CAMARO BRANCO',         33, 999],  // col 90 row 33
-    [105, 'PORSCHE BOXSTER',       33, 999],
-    [120, 'MUSTANG GT',            33, 999],
-    // Section 2 — header row 42, cols 0-45
-    [0,   'MCLAREN 600LT',         43, 999],
-    [15,  'FERRARI PORTOFINO',     43, 999],
-    [30,  'LAMBORGHINI GALLARDO',  43, 999],
-    [45,  'CORVETTE C7',           43, 999],
-    // Sub-section 2b — header row 43
-    [135, 'CALIFORNIA AMARELA',    44, 999],
-    [165, 'MUSTANG 5.0',           44, 999],  // col 165 row 44
-    // Camaro Amarelo second section
-    [150, 'CAMARO AMARELO',        44, 999],
-  ];
+  // Dynamic header detection — finds car positions automatically from the file
+  const CAR_NAMES = new Set([
+    'MUSTANG BLACK','MUSTANG WHITE','MUSTANG RED','718','718 SILVER','718 RUBY',
+    'PORSCHE 911 CARRERA','MASERATI GRANCABRIO','CAMARO BORDO','MUSTANG 2025',
+    'FERRARI CALIFORNIA','SHELBY GT-500','CORVETTE C6','BMW M3','BMW M4','M4',
+    'FERRARI 360 MODENA','CAMARO AMARELO','TOYOTA SUPRA','AUDI RS6',
+    'PORSCHE 911 CARRERA S','DODGE CHALLENGER','CAMARO BRANCO','MUSTANG 5.0',
+    'PORSCHE BOXSTER','MUSTANG GT','MCLAREN 600LT','FERRARI PORTOFINO',
+    'LAMBORGHINI GALLARDO','CORVETTE C7','CALIFORNIA AMARELA','LANCER EVO X',
+  ]);
+
+  // 1. Find all header positions: (rowIdx, colIdx, carName)
+  const headers = [];
+  for (let ri = 0; ri < rows.length; ri++) {
+    const row = rows[ri];
+    for (let ci = 0; ci < row.length; ci++) {
+      const val = row[ci];
+      if (!val || typeof val !== 'string') continue;
+      const name = val.trim().toUpperCase();
+      if (!CAR_NAMES.has(name)) continue;
+      // Confirm it's a header: INSTRUTOR or C/D within next 15 cols
+      let isHeader = false;
+      for (let k = 1; k <= 15; k++) {
+        const nb = row[ci+k] ? String(row[ci+k]).trim().toUpperCase() : '';
+        if (nb === 'INSTRUTOR' || nb === 'C/D') { isHeader = true; break; }
+      }
+      if (isHeader) headers.push([ri, ci, val.trim()]);
+    }
+  }
+
+  // 2. Build sections: data runs from header+1 until next header in same col
+  const sections = headers.map(([hrow, col, car]) => {
+    let dataEnd = rows.length;
+    for (const [hrow2, col2] of headers) {
+      if (col2 === col && hrow2 > hrow) { dataEnd = hrow2; break; }
+    }
+    return [col, car, hrow + 1, dataEnd];
+  });
+
+  // 3. Extract records
   const out = [];
   sections.forEach(([col, car, a, b]) => {
     for (let i = a; i < Math.min(b, rows.length); i++) {
@@ -1245,17 +1241,16 @@ function extractRecords(rows) {
       const g = o => { const idx = col+o; return (idx >= 0 && idx < row.length) ? row[idx] : null; };
       const cli = g(1);
       if (!cli || typeof cli !== 'string' || cli.trim().length < 3) continue;
-      // Só contabiliza se status = OK
       const status = g(14) ? String(g(14)).trim().toUpperCase() : '';
       if (status !== 'OK') continue;
       const cd = g(5), cds = cd ? String(cd).trim().toUpperCase() : '';
       out.push({
-        carro:    car,
-        cliente:  cli.trim(),
-        vendedor: g(3) ? String(g(3)).trim() : '',
-        tipo:     cds === 'D' ? 'Drive' : cds === 'C' ? 'Carona' : cds || '—',
+        carro:     car,
+        cliente:   cli.trim(),
+        vendedor:  g(3) ? String(g(3)).trim() : '',
+        tipo:      cds === 'D' ? 'Drive' : cds === 'C' ? 'Carona' : cds || '\u2014',
         instrutor: g(10) ? String(g(10)).trim() : '',
-        status:   'OK',
+        status:    'OK',
       });
     }
   });
@@ -1718,13 +1713,13 @@ const TIERS = ['normal','ouro','prata','bronze'];
 function getTier(tid) { if (!COM[tid]) COM[tid]={}; return COM[tid]; }
 
 const ALL_CARS = [
-  'MUSTANG BLACK','MUSTANG WHITE','MUSTANG RED','718','PORSCHE 911 CARRERA',
-  'MASERATI GRANCABRIO','CAMARO BORDO','MUSTANG 2025','FERRARI CALIFORNIA',
-  'SHELBY GT-500','CORVETTE C6','BMW M3','BMW M4','FERRARI 360 MODENA','CAMARO AMARELO',
-  'TOYOTA SUPRA','AUDI RS6','PORSCHE 911 CARRERA S','DODGE CHALLENGER',
-  'MUSTANG 5.0','PORSCHE BOXSTER','MUSTANG GT','MCLAREN 600LT',
-  'FERRARI PORTOFINO','LAMBORGHINI GALLARDO','CORVETTE C7',
-  'CALIFORNIA AMARELA','CAMARO BRANCO'
+  'MUSTANG BLACK','MUSTANG WHITE','MUSTANG RED','718','718 SILVER','718 RUBY',
+  'PORSCHE 911 CARRERA','MASERATI GRANCABRIO','CAMARO BORDO','MUSTANG 2025',
+  'FERRARI CALIFORNIA','SHELBY GT-500','CORVETTE C6','BMW M3','BMW M4',
+  'FERRARI 360 MODENA','CAMARO AMARELO','TOYOTA SUPRA','AUDI RS6',
+  'PORSCHE 911 CARRERA S','DODGE CHALLENGER','MUSTANG 5.0','PORSCHE BOXSTER',
+  'MUSTANG GT','MCLAREN 600LT','FERRARI PORTOFINO','LAMBORGHINI GALLARDO',
+  'CORVETTE C7','CALIFORNIA AMARELA','CAMARO BRANCO','LANCER EVO X',
 ];
 
 function populateCarSel() {
