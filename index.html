@@ -757,6 +757,7 @@ tbody td.td-main { color:var(--text); font-weight:500; }
                   <th>Instrutor</th>
                   <th style="text-align:right">Drives</th>
                   <th style="text-align:right">Caronas</th>
+                  <th style="text-align:right">Total</th>
                   <th style="text-align:right">Comiss&#227;o Simples</th>
                 </tr></thead>
                 <tbody id="inst-body-normal"></tbody>
@@ -802,6 +803,7 @@ tbody td.td-main { color:var(--text); font-weight:500; }
                   <th>Instrutor</th>
                   <th style="text-align:right">Drives</th>
                   <th style="text-align:right">Caronas</th>
+                  <th style="text-align:right">Total</th>
                   <th style="text-align:right">Comiss&#227;o Simples</th>
                 </tr></thead>
                 <tbody id="inst-body-ouro"></tbody>
@@ -847,6 +849,7 @@ tbody td.td-main { color:var(--text); font-weight:500; }
                   <th>Instrutor</th>
                   <th style="text-align:right">Drives</th>
                   <th style="text-align:right">Caronas</th>
+                  <th style="text-align:right">Total</th>
                   <th style="text-align:right">Comiss&#227;o Simples</th>
                 </tr></thead>
                 <tbody id="inst-body-prata"></tbody>
@@ -892,6 +895,7 @@ tbody td.td-main { color:var(--text); font-weight:500; }
                   <th>Instrutor</th>
                   <th style="text-align:right">Drives</th>
                   <th style="text-align:right">Caronas</th>
+                  <th style="text-align:right">Total</th>
                   <th style="text-align:right">Comiss&#227;o Simples</th>
                 </tr></thead>
                 <tbody id="inst-body-bronze"></tbody>
@@ -1194,7 +1198,6 @@ function parseXLSX(file, cb) {
 }
 
 function extractRecords(rows) {
-  // Dynamic header detection — finds car positions automatically from the file
   const CAR_NAMES = new Set([
     'MUSTANG BLACK','MUSTANG WHITE','MUSTANG RED','718','718 SILVER','718 RUBY',
     'PORSCHE 911 CARRERA','MASERATI GRANCABRIO','CAMARO BORDO','MUSTANG 2025',
@@ -1204,8 +1207,6 @@ function extractRecords(rows) {
     'PORSCHE BOXSTER','MUSTANG GT','MCLAREN 600LT','FERRARI PORTOFINO',
     'LAMBORGHINI GALLARDO','CORVETTE C7','CALIFORNIA AMARELA','LANCER EVO X',
   ]);
-
-  // 1. Find all header positions: (rowIdx, colIdx, carName)
   const headers = [];
   for (let ri = 0; ri < rows.length; ri++) {
     const row = rows[ri];
@@ -1214,7 +1215,6 @@ function extractRecords(rows) {
       if (!val || typeof val !== 'string') continue;
       const name = val.trim().toUpperCase();
       if (!CAR_NAMES.has(name)) continue;
-      // Confirm it's a header: INSTRUTOR or C/D within next 20 cols
       let isHeader = false;
       for (let k = 1; k <= 20; k++) {
         const nb = row[ci+k] ? String(row[ci+k]).trim().toUpperCase() : '';
@@ -1223,8 +1223,6 @@ function extractRecords(rows) {
       if (isHeader) headers.push([ri, ci, val.trim()]);
     }
   }
-
-  // 2. Build sections: data runs from header+1 until next header in same col
   const sections = headers.map(([hrow, col, car]) => {
     let dataEnd = rows.length;
     for (const [hrow2, col2] of headers) {
@@ -1232,8 +1230,6 @@ function extractRecords(rows) {
     }
     return [col, car, hrow + 1, dataEnd];
   });
-
-  // 3. Extract records
   const out = [];
   sections.forEach(([col, car, a, b]) => {
     for (let i = a; i < Math.min(b, rows.length); i++) {
@@ -1248,7 +1244,7 @@ function extractRecords(rows) {
         carro:     car,
         cliente:   cli.trim(),
         vendedor:  g(3) ? String(g(3)).trim() : '',
-        tipo:      cds === 'D' ? 'Drive' : cds === 'C' ? 'Carona' : cds || '\u2014',
+        tipo:      cds === 'D' ? 'Drive' : cds === 'C' ? 'Carona' : cds || '—',
         instrutor: g(10) ? String(g(10)).trim() : '',
         status:    'OK',
       });
@@ -1273,11 +1269,8 @@ function importData() {
     try {
       log(`<span class="log-info">Linhas lidas: ${rows.length}</span>`);
       const recs = extractRecords(rows);
-      // Debug: show detected cars
-      const carCount = {};
-      recs.forEach(r => { carCount[r.carro] = (carCount[r.carro]||0)+1; });
-      const carSummary = Object.entries(carCount).sort((a,b)=>b[1]-a[1]).map(([c,n])=>c+':'+n).join(', ');
-      log(`<span class="log-info">Carros: ${carSummary}</span>`);
+      const _cc={}; recs.forEach(r=>{_cc[r.carro]=(_cc[r.carro]||0)+1;});
+      log(`<span class="log-info">Carros: ${Object.entries(_cc).sort((a,b)=>b[1]-a[1]).map(([c,n])=>c+':'+n).join(', ')}</span>`);
       log(`<span class="log-info">Registros extraídos: ${recs.length}</span>`);
       if (!recs.length) { log(`<span class="log-err">Nenhum registro com status OK encontrado.</span>`); showToast('Erro: sem registros', true); return; }
       const upd = !!DB[dateKey];
@@ -1718,13 +1711,13 @@ const TIERS = ['normal','ouro','prata','bronze'];
 function getTier(tid) { if (!COM[tid]) COM[tid]={}; return COM[tid]; }
 
 const ALL_CARS = [
-  'MUSTANG BLACK','MUSTANG WHITE','MUSTANG RED','718','718 SILVER','718 RUBY',
-  'PORSCHE 911 CARRERA','MASERATI GRANCABRIO','CAMARO BORDO','MUSTANG 2025',
-  'FERRARI CALIFORNIA','SHELBY GT-500','CORVETTE C6','BMW M3','BMW M4',
-  'FERRARI 360 MODENA','CAMARO AMARELO','TOYOTA SUPRA','AUDI RS6',
-  'PORSCHE 911 CARRERA S','DODGE CHALLENGER','MUSTANG 5.0','PORSCHE BOXSTER',
-  'MUSTANG GT','MCLAREN 600LT','FERRARI PORTOFINO','LAMBORGHINI GALLARDO',
-  'CORVETTE C7','CALIFORNIA AMARELA','CAMARO BRANCO','LANCER EVO X',
+  'MUSTANG BLACK','MUSTANG WHITE','MUSTANG RED','718','718 SILVER','718 RUBY','PORSCHE 911 CARRERA',
+  'MASERATI GRANCABRIO','CAMARO BORDO','MUSTANG 2025','FERRARI CALIFORNIA',
+  'SHELBY GT-500','CORVETTE C6','BMW M3','BMW M4','FERRARI 360 MODENA','CAMARO AMARELO',
+  'TOYOTA SUPRA','AUDI RS6','PORSCHE 911 CARRERA S','DODGE CHALLENGER',
+  'MUSTANG 5.0','PORSCHE BOXSTER','MUSTANG GT','MCLAREN 600LT',
+  'FERRARI PORTOFINO','LAMBORGHINI GALLARDO','CORVETTE C7',
+  'CALIFORNIA AMARELA','CAMARO BRANCO','LANCER EVO X','M4'
 ];
 
 function populateCarSel() {
@@ -1863,18 +1856,21 @@ function renderInstTable(tid, allRecs) {
   }
   const sorted=Object.entries(instMap)
     .map(([inst,d])=>({inst,drives:d.drives,caronas:d.caronas,com:calcCom(d.carMap,d.caronas)}))
-    .sort((a,b)=>b.drives-a.drives);
+    .sort((a,b)=>(b.drives+b.caronas)-(a.drives+a.caronas)||b.drives-a.drives);
   const maxD=sorted[0]?.drives||1;
   const totD=sorted.reduce((s,r)=>s+r.drives,0);
   const totC=sorted.reduce((s,r)=>s+r.caronas,0);
+  const totT=totD+totC;
   const totV=sorted.reduce((s,r)=>s+r.com,0);
   const hasCom=sorted.some(r=>r.com>0);
   tbody.innerHTML=sorted.map(row=>{
     const bw=Math.round((row.drives/maxD)*50);
+    const tot=row.drives+row.caronas;
     return `<tr>
       <td class="td-main">${row.inst}<span class="rank-bar" style="width:${bw}px"></span></td>
       <td class="td-num">${row.drives}</td>
       <td class="td-num">${row.caronas}</td>
+      <td class="td-num" style="font-weight:600;color:var(--text)">${tot}</td>
       <td class="td-val">${hasCom&&row.com>0?'R$ '+row.com.toFixed(2):'<span style="color:var(--text3)">—</span>'}</td>
     </tr>`;
   }).join('');
@@ -1882,6 +1878,7 @@ function renderInstTable(tid, allRecs) {
     <td>TOTAL</td>
     <td class="td-num" style="text-align:right">${totD}</td>
     <td class="td-num" style="text-align:right">${totC}</td>
+    <td class="td-num" style="text-align:right;font-weight:600;color:var(--text)">${totT}</td>
     <td class="tf-val">${hasCom?'R$ '+totV.toFixed(2):'—'}</td>
   </tr>`;
 }
@@ -1936,6 +1933,42 @@ function renderComissoes() {
   renderTop5();
   const recs = getFilteredComRecords();
   TIERS.forEach(tid => renderInstTable(tid, recs));
+}
+
+function expandTier(tid) {
+  const tbody = document.getElementById('inst-body-'+tid);
+  const tfoot = document.getElementById('inst-foot-'+tid);
+  if (!tbody) return;
+  const label = {normal:'Normal',ouro:'Ouro',prata:'Prata',bronze:'Bronze'}[tid]||tid;
+  const ano = document.getElementById('com-ano')?.value||'all';
+  const mes = document.getElementById('com-mes')?.value||'all';
+  const MESES={'01':'Jan','02':'Fev','03':'Mar','04':'Abr','05':'Mai','06':'Jun','07':'Jul','08':'Ago','09':'Set','10':'Out','11':'Nov','12':'Dez'};
+  const periodo = ano==='all'?'Todos':(mes==='all'?ano:(MESES[mes]||mes)+' '+ano);
+  let tbl='';
+  tbody.querySelectorAll('tr').forEach(tr => {
+    tbl += '<tr>'+Array.from(tr.querySelectorAll('td')).map((td,i)=>
+      '<td style="padding:9px 14px;border-bottom:1px solid #e8ecf0;font-size:13px;'+(i>0?'text-align:right;font-family:monospace;':'')+'">'+(td.innerText||'')+'</td>'
+    ).join('')+'</tr>';
+  });
+  const foot=tfoot.querySelector('tr');
+  const ftbl=foot?'<tr>'+Array.from(foot.querySelectorAll('td')).map((td,i)=>
+    '<td style="padding:10px 14px;font-size:13px;font-weight:700;'+(i>0?'text-align:right;font-family:monospace;':'')+'">'+(td.innerText||'')+'</td>'
+  ).join('')+'</tr>':'';
+  const win=window.open('','_blank','width=860,height=680');
+  win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Comissao '+label+'</title>'
+    +'<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;padding:32px;color:#111}'
+    +'h1{font-size:18px;font-weight:700;margin-bottom:4px}p{font-size:12px;color:#666;margin-bottom:20px}'
+    +'table{width:100%;border-collapse:collapse}thead th{background:#0a192f;color:#fff;padding:10px 14px;font-size:11px;text-transform:uppercase;text-align:left}'
+    +'thead th:not(:first-child){text-align:right}tbody tr:nth-child(even){background:#f5f7fa}'
+    +'tfoot tr{background:#0a192f;color:#fff}'
+    +'.btn{margin-top:20px;padding:10px 24px;background:#e03148;color:#fff;border:none;border-radius:7px;font-size:14px;cursor:pointer}'
+    +'@media print{.btn{display:none}}</style></head><body>'
+    +'<h1>Comissao '+label+'</h1><p>Periodo: '+periodo+' &nbsp;&middot;&nbsp; '+new Date().toLocaleString('pt-BR')+'</p>'
+    +'<table><thead><tr><th>Instrutor</th><th>Drives</th><th>Caronas</th><th>Total</th><th>Comissao Simples</th></tr></thead>'
+    +'<tbody>'+tbl+'</tbody><tfoot>'+ftbl+'</tfoot></table>'
+    +'<button class="btn" onclick="window.print()">Imprimir / PDF</button>'
+    +'</body></html>');
+  win.document.close();
 }
 
 function exportPremissasExcel(tid) {
@@ -1996,6 +2029,21 @@ function toggleMobileMenu() {
 // Close mobile menu when switching tabs
 const _origSwitchTab = switchTab;
 
+// PASSWORD GATE
+function checkPwGate() {
+  const val = document.getElementById('pw-input').value;
+  if (val === SENHA) {
+    document.getElementById('pw-gate').style.display = 'none';
+  } else {
+    const err = document.getElementById('pw-err');
+    err.textContent = 'Senha incorreta.';
+    document.getElementById('pw-input').value = '';
+    document.getElementById('pw-input').focus();
+    setTimeout(() => { err.textContent = ''; }, 2500);
+  }
+}
+setTimeout(() => { const el = document.getElementById('pw-input'); if(el) el.focus(); }, 200);
+
 // INIT
 document.getElementById('imp-date').value = new Date().toISOString().split('T')[0];
 document.getElementById('gas-date').value = new Date().toISOString().split('T')[0];
@@ -2018,5 +2066,20 @@ document.getElementById('sync-modal').addEventListener('click', e => {
   }
 })();
 </script>
+<!-- PASSWORD GATE -->
+<div id="pw-gate" style="position:fixed;inset:0;background:#06070b;z-index:99999;display:flex;align-items:center;justify-content:center;">
+  <div style="background:#111318;border:1px solid #262a3d;border-radius:14px;padding:36px 40px;width:340px;max-width:90vw;text-align:center;">
+    <div style="font-size:22px;font-weight:700;color:#e2e5f0;margin-bottom:6px;">BI<span style="color:#e03148">.</span>DRIVES</div>
+    <div style="font-size:11px;color:#4a526a;font-family:monospace;letter-spacing:1px;margin-bottom:28px;text-transform:uppercase">Acesso Restrito</div>
+    <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:6px;text-align:left;">
+      <label style="font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:#4a526a;font-family:monospace">Senha</label>
+      <input type="password" id="pw-input" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;"
+        style="background:#1c1f2e;border:1px solid #2a2f42;border-radius:8px;color:#e2e5f0;padding:11px 14px;font-family:monospace;font-size:14px;outline:none;width:100%;letter-spacing:3px;"
+        onkeydown="if(event.key==='Enter')checkPwGate()">
+    </div>
+    <div id="pw-err" style="font-size:11px;color:#e03148;font-family:monospace;min-height:18px;margin-bottom:12px;"></div>
+    <button onclick="checkPwGate()" style="width:100%;padding:12px;background:#e03148;border:none;border-radius:8px;color:white;font-size:14px;font-weight:600;cursor:pointer;">Entrar</button>
+  </div>
+</div>
 </body>
 </html>
