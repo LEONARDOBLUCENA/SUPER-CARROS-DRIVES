@@ -1266,14 +1266,49 @@ function extractRecords(rows) {
 }
 
 const SENHA = 'drives2026';
-function checkSenha(acao) {
-  const s = prompt('Senha para ' + acao + ':');
-  if (s !== SENHA) { showToast('Senha incorreta', true); return false; }
-  return true;
+function checkSenha(acao, callback) {
+  // Show custom password modal
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:99998;display:flex;align-items:center;justify-content:center;';
+  overlay.innerHTML = `
+    <div style="background:#111318;border:1px solid #262a3d;border-radius:12px;padding:28px 32px;width:320px;max-width:90vw;text-align:center;">
+      <div style="font-size:14px;font-weight:600;color:#e2e5f0;margin-bottom:4px;">Confirmar ação</div>
+      <div style="font-size:12px;color:#4a526a;margin-bottom:18px;">${acao}</div>
+      <div style="text-align:left;margin-bottom:6px;">
+        <label style="font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:#4a526a;font-family:monospace;">Senha</label>
+      </div>
+      <input type="password" id="action-pw" placeholder="••••••••"
+        style="width:100%;background:#1c1f2e;border:1px solid #2a2f42;border-radius:8px;color:#e2e5f0;padding:10px 12px;font-family:monospace;font-size:14px;outline:none;letter-spacing:3px;margin-bottom:6px;">
+      <div id="action-pw-err" style="font-size:11px;color:#e03148;font-family:monospace;min-height:16px;margin-bottom:12px;"></div>
+      <div style="display:flex;gap:8px;">
+        <button id="action-pw-ok" style="flex:1;padding:10px;background:#e03148;border:none;border-radius:7px;color:white;font-size:13px;font-weight:600;cursor:pointer;">Confirmar</button>
+        <button id="action-pw-cancel" style="flex:1;padding:10px;background:transparent;border:1px solid #262a3d;border-radius:7px;color:#8892aa;font-size:13px;cursor:pointer;">Cancelar</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  const inp = overlay.querySelector('#action-pw');
+  const err = overlay.querySelector('#action-pw-err');
+  setTimeout(() => inp.focus(), 50);
+  function tryConfirm() {
+    if (inp.value === SENHA) {
+      document.body.removeChild(overlay);
+      callback(true);
+    } else {
+      err.textContent = 'Senha incorreta.';
+      inp.value = '';
+      inp.focus();
+      setTimeout(() => { err.textContent = ''; }, 2000);
+    }
+  }
+  overlay.querySelector('#action-pw-ok').onclick = tryConfirm;
+  overlay.querySelector('#action-pw-cancel').onclick = () => { document.body.removeChild(overlay); callback(false); };
+  inp.onkeydown = e => { if (e.key === 'Enter') tryConfirm(); if (e.key === 'Escape') { document.body.removeChild(overlay); callback(false); } };
 }
 function importData() {
   if (!pendingFile) return;
-  if (!checkSenha('importar')) return;
+  checkSenha('Importar dados', ok => { if (!ok) return; _doImport(); });
+}
+function _doImport() {
   const [y,m,d] = document.getElementById('imp-date').value.split('-');
   const dateKey = `${d}/${m}/${y}`;
   log(`<span class="log-info">Processando ${dateKey}...</span>`);
@@ -1339,15 +1374,17 @@ function refreshSidebar() {
     </div>`).join('');
 }
 function deleteDay(d) {
-  if (!checkSenha('excluir')) return;
-  if (!confirm(`Remover ${d}?`)) return;
+  checkSenha('Excluir dia ' + d, ok => { if (!ok) return; if (!confirm('Remover ' + d + '?')) return; _doDeleteDay(d); });
+}
+function _doDeleteDay(d) {
   delete DB[d]; saveDB(DB);
   if (activeDay===d) activeDay='all';
   refreshSidebar(); showToast(`Dia ${d} removido`);
 }
 function clearAllData() {
-  if (!checkSenha('limpar tudo')) return;
-  if (!confirm('Apagar todos os dados de drives?')) return;
+  checkSenha('Limpar todos os dados', ok => { if (!ok) return; if (!confirm('Apagar todos os dados de drives?')) return; _doClearAll(); });
+}
+function _doClearAll() {
   DB={}; saveDB(DB); activeDay='all';
   refreshSidebar(); showToast('Dados apagados');
 }
